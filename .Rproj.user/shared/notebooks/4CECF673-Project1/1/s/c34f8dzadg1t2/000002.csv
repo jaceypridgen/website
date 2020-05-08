@@ -1,0 +1,9 @@
+"0","for(i in 2:10){
+  pam_fit <- tidyfulldata%>% pam(i)
+  sil_width[i] <- pam_fit$silinfo$avg.width
+}
+"
+"2","
+"
+"2","
+"

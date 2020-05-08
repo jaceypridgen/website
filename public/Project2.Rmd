@@ -1,0 +1,388 @@
+---
+title: 'Project 2: Modeling, Testing, and Predicting'
+author: "SDS348"
+date: ''
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE,fig.align="center",warning=FALSE,message=FALSE,fig.width=8, fig.height=5, linewidth=60)
+options(tibble.width = 100,width = 100)
+library(tidyverse)
+```
+
+# Modeling
+
+This is the Washington Health Workforce Survey Data, a survey of health practitioners in Washington State. There are 128 variables and roughly 60,000 observations. Each observation is the survey response of a healthcare practitioner.I have only selected the variable in which a majority of the respondants provided responses and there were less than five levels if the variable was categorical. ActiveCredentialOtherState is a binary categorical variable detailing whether a health practitioner has an active credential in another state. AnnualWeeksWorked is a numeric variable describing the annual number of weeks worked. BirthYear is the birth year of the health practitioner. CommunicateOtherLanguge is a binary categorical variable describing whether the practitioner speaks another language. HighestEducationOnline is a binary variable stating whether the highest education achieved was from an online program. HighestEducationYear is the year in which the highest education was achieved. NumberYearsPracticeWashington is the number of years practiced in Washington. NumberYearsPrimaryPracticeLocation is the number of years practice at the health workers primary practice location. WorkStatus is whether they are currently working. After selecting for these variables and omiting NAs, 9 variables with 46,356 observations remained.  
+```{R}
+healthdata <- read.csv("Washington_Health_Workforce_Survey_data.csv", header = T, na.strings = c("", " ", "NA"))
+healthdata <- healthdata %>% 
+  select(ActiveCredentialOtherState, AnnualWeeksWorked, BirthYear,
+         CommunicateOtherLanguage, HighestEducationOnline, HighestEducationYear,
+         NumberYearsPracticeWashington, NumberYearsPrimaryPracticeLocation, WorkStatus)%>%
+  na.omit() %>%
+  mutate(BirthYear = as.numeric(BirthYear)) %>%
+  mutate(HighestEducationYear = as.numeric(HighestEducationYear)) %>%
+  mutate(ActiveCredentialOtherState = as.logical(ActiveCredentialOtherState)) %>%
+  mutate(CommunicateOtherLanguage = as.logical(CommunicateOtherLanguage)) %>%
+  mutate(HighestEducationOnline = as.logical(HighestEducationOnline)) %>%
+  mutate(WorkStatus = as.logical(WorkStatus))
+glimpse(healthdata)
+```
+
+## **1.**
+A MANOVA test was complted to explore whether Annual Weeks Worked, Birth Year, Highest Education Year, Number of Years Practicing in Washington, or  Number of Years at Primary Practice Location differed by WorkStatus. 
+To determine if the MANOVA assumptions were met, several tests were completed. 
+This survey was distributed to all heathcare workers in Washington once, thus each observation is independent of each other. All groups have more than 25 responses, therefore, multivariate normality of dependent variables is assumed. 
+```{R}
+count(healthdata, healthdata$ActiveCredentialOtherState)
+count(healthdata, healthdata$CommunicateOtherLanguage)
+count(healthdata, healthdata$HighestEducationOnline)
+count(healthdata, healthdata$WorkStatus)
+glimpse(healthdata)
+```
+The assumption for homogeneity of within-group covariance matrices is not met because the p-value for the Box_m test is significantly less than 0.05. 
+```{R}
+library(heplots)
+numhealthdata <- healthdata %>% select(AnnualWeeksWorked, BirthYear, HighestEducationYear, NumberYearsPracticeWashington, NumberYearsPrimaryPracticeLocation, WorkStatus)
+boxM(numhealthdata[,1:5], numhealthdata[,"WorkStatus"] )
+```
+Though some assumptions for MANOVA were violated, the MANOVA test was still completed. 
+
+```{R}
+man <- manova(cbind(AnnualWeeksWorked, BirthYear, HighestEducationYear, NumberYearsPracticeWashington, NumberYearsPrimaryPracticeLocation)~WorkStatus, data = numhealthdata)
+summary(man)
+```
+The p-value was less than 0.05, so an ANOVA test was completed to find variables showing a mean difference across work status. 
+
+```{R}
+summary.aov(man)
+```
+Only Annual Weeks Worked showed a mean difference across Work Status. Because work status is a binary variable, a t-test was not needed to determine what level of the Work Status variable Annual Weeks Worked differed by. 
+
+In total, six tests were completed, one MANOVA and five ANOVAs. Because a large number of tests were completed, the p-value must be adjusted. 
+
+```{R}
+1-0.95^6
+0.05/6
+```
+The probability of at least one type I error is 0.265. The Bonferroni corrected p-value is 0.0083. After correcting the p-value, the MANOVA and the Work Status to Annual Weeks Worked ANOVA were still statistically significant. There is a mean difference in the annual number of weeks worked for workers compared to non-workers (p-value < 2.2e-16) 
+
+## **2.** 
+The true mean difference in annual number of weeks worked if a person is a worker versus if they are not a worker is 25.989 weeks.
+
+```{R}
+mean(healthdata[healthdata$WorkStatus == "TRUE",]$AnnualWeeksWorked) -
+  mean(healthdata[healthdata$WorkStatus == "FALSE",]$AnnualWeeksWorked)
+```
+A randomization test was complete to explore whether mean annual weeks worked was different if a person had a work status of true or a work status of false. 
+
+Ho: There is not a difference in the mean annual number of weeks worked if a person is currently working compared to if they are not working.  
+Ha: There is a difference in the mean annual number of weeks worked if a person is currently working compared to if they are not working. 
+
+```{R}
+set.seed(1234)
+rand_dist <- vector()
+for(i in 1:5000){
+  new<- data.frame(AnnualWeeksWorked = sample(healthdata$AnnualWeeksWorked), WorkStatus = healthdata$WorkStatus)
+  rand_dist[i] <- mean(new[new$WorkStatus == "TRUE",]$AnnualWeeksWorked) -
+                  mean(new[new$WorkStatus == "FALSE",]$AnnualWeeksWorked)
+}
+```
+
+The calculated p-value is 0. This is because in the random distribution, there was never an occurance of the calculated mean being greater than 25.989 or less than -25.989. Therefore, we can reject the null hypothesis. We have strong evidence that there is a difference in the mean annual number of weeks worked if a person is currently working compared to if they are not working (p-value <<< 0.0001)
+```{R}
+mean(rand_dist>25.989 | rand_dist < -25.989)
+```
+
+A histogram was plotted of the random distrubution with the true mean as a verticle line. 
+```{R}
+library(ggthemr)
+colors <- c("#444444","#de6757" ,"#3262AB", "#EB9050" ,"#FF8D7D", "#C8E370","#C45B4D", "#41a65c", "#5E2C25" ,"#78695F")
+custom <- define_palette(
+  swatch = colors,
+  gradient = c(lower = colors[1L], upper = colors[2L])
+)
+ggthemr(custom, 'clean')
+ggplot() +
+  geom_histogram(aes(rand_dist), binwidth = 1)+
+  xlim(-8, 30) +
+  geom_vline(xintercept = 25.989, color = "black") +
+  scale_y_continuous(expand = c(0,0)) +
+  xlab("Random Distribution") +
+  ylab("Count")
+```
+## **3.**
+
+To explore whether annual number of weeks works can be predicted by birth year or whether a health workers has an active credential in another state, a linear regression model was made. Annual weeks worked and birth year were first mean centered. 
+```{R}
+healthdata$AnnualWeeksWorked_c <- healthdata$AnnualWeeksWorked -
+  mean(healthdata$AnnualWeeksWorked)
+healthdata$BirthYear_c <- healthdata$BirthYear - mean(healthdata$BirthYear)
+healthdata$NumberYearsPrimaryPracticeLocation_c <- healthdata$NumberYearsPrimaryPracticeLocation - mean(healthdata$NumberYearsPrimaryPracticeLocation)
+
+fit <- lm(AnnualWeeksWorked_c ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)
+summary(fit)
+```
+For people with average birth years, a person with an active credential in another state is predicted to work 0.999 weeks less than a person without an active credential in another state. 
+
+Controlling for active credential status, for every one year decrease in birth year, the annual number of weeks worked decreases by 0.116 weeks. 
+
+The slope for birth year on annual weeks worked is 0.056 higher for people with active credentials in other states than people without active credentials in other states. 
+
+```{R}
+ggplot(healthdata, aes(x = BirthYear_c, y = AnnualWeeksWorked_c, color = ActiveCredentialOtherState)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  xlab("Centered Birth Year") +
+  ylab("Centered Annual Weeks Worked") + 
+  labs(color = "Active Credential in Other State") +
+  theme(legend.position = c(0.25, 0.9)) +
+  guides(color = guide_legend(reverse = TRUE))
+```
+To determine whether the assumptions of a linear regression model were met, several plots were created. Linearity was first plotted, then normality of residuals, then homoskedsaticity was explored via a plot of residuals versus the fitted values. 
+
+
+From the scatter plot of birth year versus annual weeks worked by whether a person has an active credential in another state, there is not a clear linear relationship between these variables. This violates the linear assumption. 
+```{R}
+ggplot(healthdata, aes(x = BirthYear_c, y = AnnualWeeksWorked_c, color = ActiveCredentialOtherState)) +
+  geom_point() +
+  xlab("Centered Birth Year") +
+  ylab("Centered Annual Weeks Worked") + 
+  labs(color = "Active Credential in Other State") +
+  theme(legend.position = c(0.25, 0.9)) +
+  guides(color = guide_legend(reverse = TRUE))
+```
+
+The histogram of the residuals is not normal, this violations the normality of residuals assumption. 
+```{R}
+resids <- lm(AnnualWeeksWorked_c ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)$residuals
+ggplot() +
+  geom_histogram(aes(resids), bins = 25)
+```
+
+The residuals are not evenly spaced among this graph, therefore, the equal variance of residuals assumption is also violated. 
+``` {R}
+fitted <- lm(AnnualWeeksWorked_c ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)$fitted.values
+ggplot()+
+  geom_point(aes(fitted, resids)) +
+  geom_hline(yintercept = 0, color = "#3262AB")
+```
+Because the heteroskedastic assumption is violated, robust standard errors were computed. 
+  
+```{R}
+library(sandwich)
+library(lmtest)
+coeftest(fit, vcov=vcovHC(fit))
+```
+Even with robust standard errors, all coeficients were significant. The standards errors increases slightly, causing the p-value to increase slightly. All p-values were still highly significant. 
+
+The R squared values were then computed to determine to proportion of variation in the response variable explained by the overall model. 
+```{R}
+summary(fit)$r.squared*100
+summary(fit)$adj.r.squared*100
+```
+The R squared value tells us that 0.781% of the variation in annual weeks worked is explained by active credential in another state and birth year. 
+The adjusted R squared value tells us that 0.775% of the variation in annual weeks worked is explained by active credential in another state and birth year. 
+
+## **4.**
+The same regression model was rerun, and bootstrapped standard errors were computed via resampling residuals. 
+
+```{R}
+set.seed(1234)
+fit <- lm(AnnualWeeksWorked_c ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)
+  resids<-fit$residuals
+  fitted<-fit$fitted.values
+  resid_resamp<-replicate(5000,{
+    new_resids<-sample(resids,replace=TRUE) 
+    healthdata$new_y<-fitted+new_resids 
+    fit <- lm(new_y ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)
+    coef(fit)
+})
+resid_resamp%>%t%>%as.data.frame%>%summarize_all(sd)
+```
+
+The bootstrapped standard errors were then compared to the original and robust SEs. The robust SEs were the largest. The bootstrapped SEs were only slightly larger than the original SEs. Because both the robust and bootstrapped SEs were larger than the original SEs, this would cause the p-value to increase. All p-values would still be significant. 
+
+```{R}
+#Original
+summary(fit)$coefficients[, 2] %>% as.data.frame()
+#Robust
+coeftest(fit, vcov=vcovHC(fit))
+#Boostrapped
+resid_resamp%>%t%>% as.data.frame %>% summarize_all(sd) 
+
+#Comparison
+variable <- c("Intercept", "ActiveCredentialOtherStateTRUE", "BirthYear_c", "ActiveCredentialOtherStateTRUE:BirthYear_c")
+original <- c(0.082529768,	0.152538086, 0.006691583,	0.012669272) %>% round(4)
+robust <- c(0.0807958, 0.1564437, 0.0067394, 0.0131415) %>% round(4)
+bootstrapped <- c(0.08111371, 0.1530644, 0.006713142, 0.01281828) %>% round(4)
+compare <- cbind(variable, original, robust, bootstrapped) %>% as.data.frame
+compare
+```
+
+## **5.**
+
+To determine if workstatus could be predicted by birth year or number of years practicing in Washington, a logistic regression was completed. 
+
+```{R}
+fit1<-glm(WorkStatus~BirthYear_c + NumberYearsPrimaryPracticeLocation_c,data=healthdata,family=binomial)
+coeftest(fit1)
+exp(coef(fit1))
+```
+The odds of working for a person with average birthyear and an average number of years at the primary practice location is 782.257.
+
+Controlling for the number of years at their primary practice location, for every one year increase in birth year, the odds of currently working increase by a factor of 0.997 (non-significant)
+
+Controlling for birth year, for every one year increase in the number of years practicing at their primary practice location increases the odds of currently working by a factor of 1.022 (non-significant).
+
+A confusion matrix was then completed. This model predicted all people to be currently working. 
+
+```{R}
+probs<-predict(fit1,type="response")
+table(predict=as.numeric(probs>.5),truth=healthdata$WorkStatus)%>%addmargins
+```
+
+
+From the class diag function, the accuracy was 0.9987057, the sensitivity was 1, the specificity was 0, and the precision was 0.9987057. The model correctly predicted all people who were currently working leading to a sensitivity of 1. The specificity was 0 because it incorrectly identified all non-workers as workers. Because the vast majority of the sample were workers, the accuracy and precision of the model was very high. 
+
+```{R}
+class_diag<-function(probs,truth){
+  
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+  
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+  prediction<-ifelse(probs>.5,1,0)
+  acc=mean(truth==prediction)
+  sens=mean(prediction[truth==1]==1)
+  spec=mean(prediction[truth==0]==0)
+  ppv=mean(truth[prediction==1]==1)
+  
+  #CALCULATE EXACT AUC
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+
+  data.frame(acc,sens,spec,ppv,auc)
+}
+
+class_diag(probs, healthdata$WorkStatus)
+```
+
+The log-odd density was then plotted against the binary outcome variable. 
+```{R}
+healthdata$logit <- predict(fit1, type = "link")
+healthdata %>% ggplot()+
+  geom_density(aes(logit, color = WorkStatus, fill = WorkStatus), alpha = .4) +
+  theme(legend.position=c(.85,.85))+xlab("logit (log-odds)") +
+  xlim(6.2,7.5)
+```
+
+To look at how well the model predicted, an ROC curve was plotted and AUC was calculated. The AUC was 0.5644. This is a bad AUC as it is between 0.5 and 0.6. 
+```{R}
+library(plotROC)
+ROCplot <- ggplot(healthdata)+geom_roc(aes(d=WorkStatus,m=probs), n.cuts=0)
+ROCplot
+calc_auc(ROCplot)
+```
+10-fold cross validation was then completed. Accuraacy, sensitive, specificty, and precision were all the same as the non-cross validated model. The AUC decreased by approximately 0.006. 
+```{R}
+set.seed(1234)
+k=10
+
+data<-healthdata[sample(nrow(healthdata)),] 
+folds<-cut(seq(1:nrow(healthdata)),breaks=k,labels=F)
+
+diags<-NULL
+for(i in 1:k){
+  train<-data[folds!=i,]
+  test<-data[folds==i,]
+  truth<-test$WorkStatus
+  fit1<-glm(WorkStatus~BirthYear_c + NumberYearsPrimaryPracticeLocation_c,data=healthdata,family=binomial)
+  probs<-predict(fit1,newdata = test,type="response")
+  diags<-rbind(diags,class_diag(probs,truth))
+}
+  
+summarize_all(diags,mean)
+```
+
+## **6.**  
+
+A LASSO regression was then completed with all variables to see if any were significant predictors of Workstatus. Only Annual Weeks Worked was a significant predictor of Work Status, all other variables were dropped. 
+```{R}
+library(glmnet)
+glimpse(healthdata)
+scaledhealthdata <- healthdata %>% select(!contains("_"), -logit) %>% mutate_if(is.numeric, scale)
+y <- as.matrix(scaledhealthdata$WorkStatus)
+x <- model.matrix(WorkStatus ~., data = scaledhealthdata)[,-1]
+cv <- cv.glmnet(x, y, family = "binomial")
+lasso <- glmnet(x, y, family = "binomial", lambda = cv$lambda.1se)
+coef(lasso)
+```
+This model was then cross-validated with K-10 fold CV. Interestingly, the accuracy, sensitive, specificity, and percision were all exactly the same as the previous model. The AUC was considerably higher and now within the good range. 
+
+```{R}
+set.seed(1234)
+k=10
+data <- scaledhealthdata %>% sample_frac 
+folds <- ntile(1:nrow(data),n=10) 
+diags<-NULL
+for(i in 1:k){
+  train <- data[folds!=i,] 
+  test <- data[folds==i,] 
+  truth <- test$WorkStatus
+  fit2 <- glm(WorkStatus~AnnualWeeksWorked,
+             data=train, family="binomial")
+  probs <- predict(fit2, newdata=test, type="response")
+  diags<-rbind(diags,class_diag(probs,truth))
+}
+diags%>%summarize_all(mean)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

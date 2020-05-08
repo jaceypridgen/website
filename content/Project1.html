@@ -1,0 +1,2109 @@
+---
+title: 'Project 1: Exploratory Data Analysis'
+author: "SDS348"
+date: ''
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+  pdf_document:
+    toc: no
+---
+
+
+
+<div id="data-wrangling-and-data-exploration" class="section level2">
+<h2>Data Wrangling and Data Exploration</h2>
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>Anemia is prevelent in women globally. I chose three World Health Organization datasets and joined them. One dataset details the prevelence of anemia in pregnant women, one dataset describes the anemia prevelence in non-pregnant women, and the final dataset details the anemia prevalence in women of reproductive age. These datasets detail the anemia prevalence from 1990 to 2016 across all countries.Each original data set has a variable for country, period, and anemia prevalence with 90% confidence interval in a single variable</p>
+<div id="data" class="section level4">
+<h4>Data</h4>
+<pre class="r"><code>library(tidyverse)
+NotPregAn &lt;- read.csv(&quot;anemianotpreg.csv&quot;)
+PregAn &lt;- read.csv(&quot;anemiapregnant.csv&quot;)
+ReprodAn &lt;- read.csv(&quot;anemiareprod.csv&quot;)</code></pre>
+</div>
+<div id="tidy-data" class="section level4">
+<h4>Tidy Data</h4>
+<p>For each of my datasets, I used pivot wider move the indicator name to the name of a varible and moved the values into that column. I then separated the convidence interval from the prevalence value using the separate function.</p>
+<pre class="r"><code>glimpse(NotPregAn)</code></pre>
+<pre><code>## Observations: 5,022
+## Variables: 4
+## $ Location      &lt;fct&gt; Afghanistan, Afghanistan, Afghanistan, Afghanistan, Afg…
+## $ Indicator     &lt;fct&gt; Prevalence of anaemia in non-pregnant women (%), Preval…
+## $ Period        &lt;int&gt; 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2…
+## $ First.Tooltip &lt;fct&gt; 42.38 [27.71-55.8], 41 [27.95-52.9], 39.6 [28.11-50.01]…</code></pre>
+<pre class="r"><code>TidyNotPregAn &lt;- NotPregAn %&gt;% pivot_wider(names_from = &quot;Indicator&quot;, 
+    values_from = &quot;First.Tooltip&quot;) %&gt;% rename(NonPregAnPrevalence = `Prevalence of anaemia in non-pregnant women (%)`) %&gt;% 
+    separate(NonPregAnPrevalence, into = c(&quot;NonPregAnPrev&quot;, &quot;NonPregAnCI&quot;), 
+        sep = &quot; &quot;)
+glimpse(TidyNotPregAn)</code></pre>
+<pre><code>## Observations: 5,022
+## Variables: 4
+## $ Location      &lt;fct&gt; Afghanistan, Afghanistan, Afghanistan, Afghanistan, Afg…
+## $ Period        &lt;int&gt; 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2…
+## $ NonPregAnPrev &lt;chr&gt; &quot;42.38&quot;, &quot;41&quot;, &quot;39.6&quot;, &quot;38.44&quot;, &quot;37.37&quot;, &quot;36.4&quot;, &quot;35.57…
+## $ NonPregAnCI   &lt;chr&gt; &quot;[27.71-55.8]&quot;, &quot;[27.95-52.9]&quot;, &quot;[28.11-50.01]&quot;, &quot;[28.1…</code></pre>
+<pre class="r"><code>glimpse(PregAn)</code></pre>
+<pre><code>## Observations: 5,022
+## Variables: 4
+## $ Location      &lt;fct&gt; Afghanistan, Afghanistan, Afghanistan, Afghanistan, Afg…
+## $ Indicator     &lt;fct&gt; Prevalence of anaemia in pregnant women (%), Prevalence…
+## $ Period        &lt;int&gt; 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2…
+## $ First.Tooltip &lt;fct&gt; 38.19 [24.71-53.29], 37.82 [25.71-51.32], 37.53 [26.74-…</code></pre>
+<pre class="r"><code>TidyPregAn &lt;- PregAn %&gt;% pivot_wider(names_from = &quot;Indicator&quot;, 
+    values_from = &quot;First.Tooltip&quot;) %&gt;% rename(PregAnPrevalence = `Prevalence of anaemia in pregnant women (%)`) %&gt;% 
+    separate(PregAnPrevalence, into = c(&quot;PregAnPrev&quot;, &quot;PregAnCI&quot;), 
+        sep = &quot; &quot;)
+glimpse(TidyPregAn)</code></pre>
+<pre><code>## Observations: 5,022
+## Variables: 4
+## $ Location   &lt;fct&gt; Afghanistan, Afghanistan, Afghanistan, Afghanistan, Afghan…
+## $ Period     &lt;int&gt; 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007…
+## $ PregAnPrev &lt;chr&gt; &quot;38.19&quot;, &quot;37.82&quot;, &quot;37.53&quot;, &quot;37.4&quot;, &quot;37.33&quot;, &quot;37.3&quot;, &quot;37.32…
+## $ PregAnCI   &lt;chr&gt; &quot;[24.71-53.29]&quot;, &quot;[25.71-51.32]&quot;, &quot;[26.74-50]&quot;, &quot;[27.24-48…</code></pre>
+<pre class="r"><code>glimpse(ReprodAn)</code></pre>
+<pre><code>## Observations: 5,022
+## Variables: 4
+## $ Location      &lt;fct&gt; Afghanistan, Afghanistan, Afghanistan, Afghanistan, Afg…
+## $ Indicator     &lt;fct&gt; Prevalence of anaemia in women of reproductive age (%),…
+## $ Period        &lt;int&gt; 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2…
+## $ First.Tooltip &lt;fct&gt; 42.01 [28.21-54.91], 40.7 [28.5-51.96], 39.4 [28.72-49.…</code></pre>
+<pre class="r"><code>TidyReprodAn &lt;- ReprodAn %&gt;% pivot_wider(names_from = &quot;Indicator&quot;, 
+    values_from = &quot;First.Tooltip&quot;) %&gt;% rename(ReprodAnPrevalence = `Prevalence of anaemia in women of reproductive age (%)`) %&gt;% 
+    separate(ReprodAnPrevalence, into = c(&quot;ReprodAnPrev&quot;, &quot;ReprodAnCI&quot;), 
+        sep = &quot; &quot;)
+glimpse(TidyReprodAn)</code></pre>
+<pre><code>## Observations: 5,022
+## Variables: 4
+## $ Location     &lt;fct&gt; Afghanistan, Afghanistan, Afghanistan, Afghanistan, Afgh…
+## $ Period       &lt;int&gt; 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 20…
+## $ ReprodAnPrev &lt;chr&gt; &quot;42.01&quot;, &quot;40.7&quot;, &quot;39.4&quot;, &quot;38.33&quot;, &quot;37.36&quot;, &quot;36.5&quot;, &quot;35.7…
+## $ ReprodAnCI   &lt;chr&gt; &quot;[28.21-54.91]&quot;, &quot;[28.5-51.96]&quot;, &quot;[28.72-49.31]&quot;, &quot;[28.7…</code></pre>
+</div>
+<div id="joining" class="section level4">
+<h4>Joining</h4>
+<p>I completed a full join becasue I wanted to keep as much data as possible. Because all three data sets came from the same source, I assume they each had the same countries and country names. Nevertheless, I choose a full join to preserve the most data. After the first full join, I had to complete a second full join to add the third data set. Again, full join was chosen to keep the most ammount of data. After joining all three data sets, I needed to tidy my data. I first used pivot_longer to move all of my prevelence indicators into one column and all of their prevalence values into one column. I did another pivot_longer to move all of the indicator confidence interval labels into a column and their values into one column. When I did this second pivot_longer, this duplicated the entire joined data set. I then had to filter the data sets so that the prevalence indicator equaled the confidence interval indicator. Overall, the new cleaned and tidy dataset has a Location varible of all countries; a Period variable of from 1990 to 2016; an Indicator variable of either reproductive age women, pregnant women, or non-pregnant women; a Prevalence variable of the prevalence value; a LowerCI variable of the lower confidence interval; and an UpperCI variable of the upper confidence interval.</p>
+<pre class="r"><code>fulldata &lt;- full_join(TidyNotPregAn, TidyPregAn)
+fulldata &lt;- full_join(fulldata, TidyReprodAn)
+glimpse(fulldata)</code></pre>
+<pre><code>## Observations: 5,022
+## Variables: 8
+## $ Location      &lt;fct&gt; Afghanistan, Afghanistan, Afghanistan, Afghanistan, Afg…
+## $ Period        &lt;int&gt; 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2…
+## $ NonPregAnPrev &lt;chr&gt; &quot;42.38&quot;, &quot;41&quot;, &quot;39.6&quot;, &quot;38.44&quot;, &quot;37.37&quot;, &quot;36.4&quot;, &quot;35.57…
+## $ NonPregAnCI   &lt;chr&gt; &quot;[27.71-55.8]&quot;, &quot;[27.95-52.9]&quot;, &quot;[28.11-50.01]&quot;, &quot;[28.1…
+## $ PregAnPrev    &lt;chr&gt; &quot;38.19&quot;, &quot;37.82&quot;, &quot;37.53&quot;, &quot;37.4&quot;, &quot;37.33&quot;, &quot;37.3&quot;, &quot;37…
+## $ PregAnCI      &lt;chr&gt; &quot;[24.71-53.29]&quot;, &quot;[25.71-51.32]&quot;, &quot;[26.74-50]&quot;, &quot;[27.24…
+## $ ReprodAnPrev  &lt;chr&gt; &quot;42.01&quot;, &quot;40.7&quot;, &quot;39.4&quot;, &quot;38.33&quot;, &quot;37.36&quot;, &quot;36.5&quot;, &quot;35.…
+## $ ReprodAnCI    &lt;chr&gt; &quot;[28.21-54.91]&quot;, &quot;[28.5-51.96]&quot;, &quot;[28.72-49.31]&quot;, &quot;[28.…</code></pre>
+<pre class="r"><code>tidyfulldata &lt;- fulldata %&gt;% pivot_longer(cols = contains(&quot;Prev&quot;), 
+    names_to = &quot;IndicatorPrev&quot;, values_to = &quot;Prevalence&quot;) %&gt;% 
+    pivot_longer(cols = contains(&quot;CI&quot;), names_to = &quot;IndicatorCI&quot;, 
+        values_to = &quot;CI&quot;) %&gt;% separate(IndicatorPrev, into = c(&quot;Indicator&quot;, 
+    &quot;Prev&quot;), sep = &quot;Prev&quot;) %&gt;% select(-Prev) %&gt;% separate(IndicatorCI, 
+    into = c(&quot;Indicator2&quot;, &quot;CI2&quot;), sep = &quot;CI&quot;) %&gt;% select(-CI2) %&gt;% 
+    filter(Indicator == Indicator2) %&gt;% select(-Indicator2) %&gt;% 
+    separate(CI, into = c(&quot;LowerCI&quot;, &quot;UpperCI&quot;), sep = &quot;-&quot;) %&gt;% 
+    separate(LowerCI, into = c(&quot;Trash&quot;, &quot;LowerCI&quot;), sep = 1) %&gt;% 
+    separate(UpperCI, into = c(&quot;UpperCI&quot;, &quot;Trash&quot;), sep = &quot;]&quot;) %&gt;% 
+    select(-Trash) %&gt;% mutate(LowerCI = as.numeric(LowerCI)) %&gt;% 
+    mutate(Prevalence = as.numeric(Prevalence)) %&gt;% mutate(UpperCI = as.numeric(UpperCI))
+glimpse(tidyfulldata)</code></pre>
+<pre><code>## Observations: 15,066
+## Variables: 6
+## $ Location   &lt;fct&gt; Afghanistan, Afghanistan, Afghanistan, Afghanistan, Afghan…
+## $ Period     &lt;int&gt; 2016, 2016, 2016, 2015, 2015, 2015, 2014, 2014, 2014, 2013…
+## $ Indicator  &lt;chr&gt; &quot;NonPregAn&quot;, &quot;PregAn&quot;, &quot;ReprodAn&quot;, &quot;NonPregAn&quot;, &quot;PregAn&quot;, …
+## $ Prevalence &lt;dbl&gt; 42.38, 38.19, 42.01, 41.00, 37.82, 40.70, 39.60, 37.53, 39…
+## $ LowerCI    &lt;dbl&gt; 27.71, 24.71, 28.21, 27.95, 25.71, 28.50, 28.11, 26.74, 28…
+## $ UpperCI    &lt;dbl&gt; 55.80, 53.29, 54.91, 52.90, 51.32, 51.96, 50.01, 50.00, 49…</code></pre>
+<pre class="r"><code>tidyfulldata</code></pre>
+<pre><code>## # A tibble: 15,066 x 6
+##    Location    Period Indicator Prevalence LowerCI UpperCI
+##    &lt;fct&gt;        &lt;int&gt; &lt;chr&gt;          &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+##  1 Afghanistan   2016 NonPregAn       42.4    27.7    55.8
+##  2 Afghanistan   2016 PregAn          38.2    24.7    53.3
+##  3 Afghanistan   2016 ReprodAn        42.0    28.2    54.9
+##  4 Afghanistan   2015 NonPregAn       41      28.0    52.9
+##  5 Afghanistan   2015 PregAn          37.8    25.7    51.3
+##  6 Afghanistan   2015 ReprodAn        40.7    28.5    52.0
+##  7 Afghanistan   2014 NonPregAn       39.6    28.1    50.0
+##  8 Afghanistan   2014 PregAn          37.5    26.7    50  
+##  9 Afghanistan   2014 ReprodAn        39.4    28.7    49.3
+## 10 Afghanistan   2013 NonPregAn       38.4    28.1    47.9
+## # … with 15,056 more rows</code></pre>
+</div>
+<div id="wrangling" class="section level4">
+<h4>Wrangling</h4>
+<p>I used all six diplyr to find the average anemia prevalence by county and indicator from 2010 to 2016. I then used the skimr function to find the overall mean, standard deviation, minimum, maximum, median, first quartile, and third quartlie anemia prevalence. Globally from 1990 to 2016, the mean anemia prevalence was 33.3% , the standard deviation was 13.2%, the minimum was 7.52%, the first quartile was 23.7%, the median was 31.4%, the third quartile was 42.0%, and the maximum was 70.2%. The Lower CI and the Upper CI were also summarized, but they are less significant as they relate directly to the overall prevalence. I then grouped by period and summarized and then grouped by indicator and summarized. The grouped by period summary provides the mean, standard deviation, minimum, maximum, median, first quartile, and third quartlie anemia prevalence for each year from 1990 to 2016.The grouped by indicator summary provides the mean, standard deviation, minimum, maximum, median, first quartile, and third quartlie anemia prevalence across all countries during the 1990 to 2016 timeframe for reproductive age women, pregnant women, and nonpregnant women. I also analyzed the corrlation between the variables. Period was negatively correlated with all numeric variables indicating that over time, anemia prevalence has decreased overall. As expected, the prevelence was closely positively correlated with the lower CI (.922) and the upper CI (.883).</p>
+<pre class="r"><code>tidyfulldata &lt;- tidyfulldata %&gt;% na.omit
+
+tidyfulldata %&gt;% group_by(Location) %&gt;% filter(Period == 2016 | 
+    Period == 2015 | Period == 2014 | Period == 2013 | Period == 
+    2012 | Period == 2011 | Period == 2010) %&gt;% select(-Period) %&gt;% 
+    arrange(desc(Location)) %&gt;% mutate(Proportion = Prevalence/100) %&gt;% 
+    group_by(Location, Indicator) %&gt;% summarize_all(mean)</code></pre>
+<pre><code>## # A tibble: 561 x 6
+## # Groups:   Location [187]
+##    Location    Indicator Prevalence LowerCI UpperCI Proportion
+##    &lt;fct&gt;       &lt;chr&gt;          &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt;
+##  1 Afghanistan NonPregAn       38.7   27.5     49.3      0.387
+##  2 Afghanistan PregAn          37.6   26.6     49.8      0.376
+##  3 Afghanistan ReprodAn        38.6   28.2     48.6      0.386
+##  4 Albania     NonPregAn       23.5   12.9     37.9      0.235
+##  5 Albania     PregAn          22.3   14.4     37.3      0.223
+##  6 Albania     ReprodAn        23.4   13.1     37.5      0.234
+##  7 Algeria     NonPregAn       33.9   16.2     55.9      0.339
+##  8 Algeria     PregAn          37.8   20.3     58.8      0.378
+##  9 Algeria     ReprodAn        34.1   16.9     55.7      0.341
+## 10 Andorra     NonPregAn       11.9    6.78    24.8      0.119
+## # … with 551 more rows</code></pre>
+<pre class="r"><code>library(skimr)
+
+tidyfulldata %&gt;% skim()</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 1: </span>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">Piped data</td>
+</tr>
+<tr class="even">
+<td align="left">Number of rows</td>
+<td align="left">15066</td>
+</tr>
+<tr class="odd">
+<td align="left">Number of columns</td>
+<td align="left">6</td>
+</tr>
+<tr class="even">
+<td align="left">_______________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Column type frequency:</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">character</td>
+<td align="left">1</td>
+</tr>
+<tr class="odd">
+<td align="left">factor</td>
+<td align="left">1</td>
+</tr>
+<tr class="even">
+<td align="left">numeric</td>
+<td align="left">4</td>
+</tr>
+<tr class="odd">
+<td align="left">________________________</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Group variables</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: character</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">min</th>
+<th align="right">max</th>
+<th align="right">empty</th>
+<th align="right">n_unique</th>
+<th align="right">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: factor</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="left">ordered</th>
+<th align="right">n_unique</th>
+<th align="left">top_counts</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Location</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="left">FALSE</td>
+<td align="right">187</td>
+<td align="left">Afg: 81, Alb: 81, Alg: 81, And: 81</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+<th align="right">p0</th>
+<th align="right">p25</th>
+<th align="right">p50</th>
+<th align="right">p75</th>
+<th align="right">p100</th>
+<th align="left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Period</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2003.00</td>
+<td align="right">7.79</td>
+<td align="right">1990.00</td>
+<td align="right">1996.00</td>
+<td align="right">2003.00</td>
+<td align="right">2010.00</td>
+<td align="right">2016.00</td>
+<td align="left">▇▇▇▇▇</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">33.32</td>
+<td align="right">13.22</td>
+<td align="right">7.52</td>
+<td align="right">23.71</td>
+<td align="right">31.37</td>
+<td align="right">42.05</td>
+<td align="right">70.18</td>
+<td align="left">▃▇▅▃▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">20.97</td>
+<td align="right">12.16</td>
+<td align="right">4.07</td>
+<td align="right">11.90</td>
+<td align="right">17.12</td>
+<td align="right">27.04</td>
+<td align="right">61.91</td>
+<td align="left">▇▆▂▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">48.75</td>
+<td align="right">13.60</td>
+<td align="right">9.14</td>
+<td align="right">40.75</td>
+<td align="right">48.82</td>
+<td align="right">58.74</td>
+<td align="right">87.76</td>
+<td align="left">▁▃▇▅▁</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>tidyfulldata %&gt;% select(-Location) %&gt;% group_by(Period) %&gt;% skim()</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 1: </span>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">Piped data</td>
+</tr>
+<tr class="even">
+<td align="left">Number of rows</td>
+<td align="left">15066</td>
+</tr>
+<tr class="odd">
+<td align="left">Number of columns</td>
+<td align="left">5</td>
+</tr>
+<tr class="even">
+<td align="left">_______________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Column type frequency:</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">character</td>
+<td align="left">1</td>
+</tr>
+<tr class="odd">
+<td align="left">numeric</td>
+<td align="left">3</td>
+</tr>
+<tr class="even">
+<td align="left">________________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Group variables</td>
+<td align="left">Period</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: character</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">Period</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">min</th>
+<th align="right">max</th>
+<th align="right">empty</th>
+<th align="right">n_unique</th>
+<th align="right">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">1990</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">1991</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">1992</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">1993</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">1994</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">1995</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">1996</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">1997</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">1998</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">1999</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">2000</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">2001</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">2002</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">2003</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">2004</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">2005</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">2006</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">2007</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">2008</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">2009</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">2010</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">2011</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">2012</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">2013</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">2014</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Indicator</td>
+<td align="right">2015</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Indicator</td>
+<td align="right">2016</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">Period</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+<th align="right">p0</th>
+<th align="right">p25</th>
+<th align="right">p50</th>
+<th align="right">p75</th>
+<th align="right">p100</th>
+<th align="left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">1990</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">40.68</td>
+<td align="right">12.32</td>
+<td align="right">11.99</td>
+<td align="right">31.62</td>
+<td align="right">39.66</td>
+<td align="right">49.29</td>
+<td align="right">69.53</td>
+<td align="left">▂▆▇▅▂</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">1991</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">39.71</td>
+<td align="right">12.62</td>
+<td align="right">10.91</td>
+<td align="right">30.62</td>
+<td align="right">38.72</td>
+<td align="right">48.73</td>
+<td align="right">67.92</td>
+<td align="left">▂▆▇▅▃</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">1992</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">38.79</td>
+<td align="right">12.89</td>
+<td align="right">10.07</td>
+<td align="right">29.46</td>
+<td align="right">37.46</td>
+<td align="right">48.13</td>
+<td align="right">67.84</td>
+<td align="left">▂▆▇▅▃</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">1993</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">37.92</td>
+<td align="right">13.10</td>
+<td align="right">9.41</td>
+<td align="right">28.38</td>
+<td align="right">36.68</td>
+<td align="right">47.75</td>
+<td align="right">67.74</td>
+<td align="left">▂▆▇▃▃</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">1994</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">37.12</td>
+<td align="right">13.28</td>
+<td align="right">8.90</td>
+<td align="right">27.58</td>
+<td align="right">35.71</td>
+<td align="right">46.85</td>
+<td align="right">67.62</td>
+<td align="left">▂▆▇▃▃</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">1995</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">36.38</td>
+<td align="right">13.40</td>
+<td align="right">8.49</td>
+<td align="right">26.80</td>
+<td align="right">35.03</td>
+<td align="right">46.79</td>
+<td align="right">67.46</td>
+<td align="left">▃▆▇▃▃</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">1996</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">35.68</td>
+<td align="right">13.49</td>
+<td align="right">8.17</td>
+<td align="right">26.12</td>
+<td align="right">34.26</td>
+<td align="right">46.11</td>
+<td align="right">67.25</td>
+<td align="left">▃▇▇▃▃</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">1997</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">35.03</td>
+<td align="right">13.54</td>
+<td align="right">7.91</td>
+<td align="right">25.64</td>
+<td align="right">33.49</td>
+<td align="right">44.47</td>
+<td align="right">66.95</td>
+<td align="left">▃▇▇▃▃</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">1998</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">34.41</td>
+<td align="right">13.56</td>
+<td align="right">7.71</td>
+<td align="right">24.91</td>
+<td align="right">33.00</td>
+<td align="right">43.43</td>
+<td align="right">66.56</td>
+<td align="left">▃▇▇▃▂</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">1999</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">33.84</td>
+<td align="right">13.54</td>
+<td align="right">7.58</td>
+<td align="right">24.29</td>
+<td align="right">32.63</td>
+<td align="right">42.59</td>
+<td align="right">66.05</td>
+<td align="left">▃▇▇▃▂</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">2000</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">33.33</td>
+<td align="right">13.49</td>
+<td align="right">7.52</td>
+<td align="right">23.66</td>
+<td align="right">32.20</td>
+<td align="right">42.17</td>
+<td align="right">65.46</td>
+<td align="left">▃▇▆▃▂</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">2001</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">32.89</td>
+<td align="right">13.43</td>
+<td align="right">7.53</td>
+<td align="right">23.41</td>
+<td align="right">31.67</td>
+<td align="right">41.53</td>
+<td align="right">64.79</td>
+<td align="left">▃▇▇▃▂</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">2002</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">32.53</td>
+<td align="right">13.34</td>
+<td align="right">7.62</td>
+<td align="right">23.21</td>
+<td align="right">31.15</td>
+<td align="right">40.91</td>
+<td align="right">64.04</td>
+<td align="left">▃▇▇▃▂</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">2003</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">32.23</td>
+<td align="right">13.25</td>
+<td align="right">7.78</td>
+<td align="right">23.09</td>
+<td align="right">30.77</td>
+<td align="right">40.36</td>
+<td align="right">63.85</td>
+<td align="left">▃▇▆▃▂</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">2004</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">31.95</td>
+<td align="right">13.15</td>
+<td align="right">8.00</td>
+<td align="right">23.08</td>
+<td align="right">30.27</td>
+<td align="right">40.18</td>
+<td align="right">63.72</td>
+<td align="left">▃▇▆▃▂</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">2005</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">31.65</td>
+<td align="right">13.04</td>
+<td align="right">8.26</td>
+<td align="right">22.93</td>
+<td align="right">29.77</td>
+<td align="right">39.95</td>
+<td align="right">63.53</td>
+<td align="left">▃▇▅▃▂</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">2006</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">31.32</td>
+<td align="right">12.92</td>
+<td align="right">8.13</td>
+<td align="right">22.78</td>
+<td align="right">29.18</td>
+<td align="right">39.33</td>
+<td align="right">63.27</td>
+<td align="left">▃▇▅▃▂</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">2007</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">30.96</td>
+<td align="right">12.80</td>
+<td align="right">8.01</td>
+<td align="right">22.55</td>
+<td align="right">28.87</td>
+<td align="right">38.61</td>
+<td align="right">62.92</td>
+<td align="left">▃▇▅▂▂</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">2008</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">30.60</td>
+<td align="right">12.68</td>
+<td align="right">7.90</td>
+<td align="right">22.32</td>
+<td align="right">28.35</td>
+<td align="right">38.03</td>
+<td align="right">62.69</td>
+<td align="left">▃▇▅▂▂</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">2009</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">30.28</td>
+<td align="right">12.55</td>
+<td align="right">7.79</td>
+<td align="right">22.20</td>
+<td align="right">27.68</td>
+<td align="right">37.34</td>
+<td align="right">62.64</td>
+<td align="left">▃▇▅▂▂</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">2010</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">30.06</td>
+<td align="right">12.42</td>
+<td align="right">7.71</td>
+<td align="right">22.00</td>
+<td align="right">27.31</td>
+<td align="right">36.84</td>
+<td align="right">63.55</td>
+<td align="left">▃▇▅▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">2011</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">29.96</td>
+<td align="right">12.29</td>
+<td align="right">7.66</td>
+<td align="right">21.79</td>
+<td align="right">27.34</td>
+<td align="right">36.66</td>
+<td align="right">64.64</td>
+<td align="left">▃▇▃▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">2012</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">29.98</td>
+<td align="right">12.16</td>
+<td align="right">7.67</td>
+<td align="right">21.84</td>
+<td align="right">27.31</td>
+<td align="right">36.58</td>
+<td align="right">65.81</td>
+<td align="left">▃▇▃▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">2013</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">30.10</td>
+<td align="right">12.00</td>
+<td align="right">7.75</td>
+<td align="right">22.12</td>
+<td align="right">27.49</td>
+<td align="right">36.59</td>
+<td align="right">66.98</td>
+<td align="left">▃▇▃▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">2014</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">30.29</td>
+<td align="right">11.83</td>
+<td align="right">7.92</td>
+<td align="right">22.50</td>
+<td align="right">27.67</td>
+<td align="right">36.91</td>
+<td align="right">68.05</td>
+<td align="left">▂▇▃▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="right">2015</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">30.68</td>
+<td align="right">11.65</td>
+<td align="right">8.24</td>
+<td align="right">22.91</td>
+<td align="right">28.02</td>
+<td align="right">37.40</td>
+<td align="right">69.13</td>
+<td align="left">▂▇▃▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="right">2016</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">31.20</td>
+<td align="right">11.45</td>
+<td align="right">8.70</td>
+<td align="right">23.41</td>
+<td align="right">28.52</td>
+<td align="right">37.93</td>
+<td align="right">70.18</td>
+<td align="left">▂▇▃▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">1990</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">20.35</td>
+<td align="right">10.69</td>
+<td align="right">5.60</td>
+<td align="right">12.25</td>
+<td align="right">17.44</td>
+<td align="right">26.66</td>
+<td align="right">57.95</td>
+<td align="left">▇▅▃▁▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">1991</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">20.94</td>
+<td align="right">11.05</td>
+<td align="right">5.71</td>
+<td align="right">12.56</td>
+<td align="right">18.16</td>
+<td align="right">27.54</td>
+<td align="right">59.04</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">1992</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">21.46</td>
+<td align="right">11.40</td>
+<td align="right">5.81</td>
+<td align="right">12.81</td>
+<td align="right">18.59</td>
+<td align="right">28.35</td>
+<td align="right">59.98</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">1993</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">21.91</td>
+<td align="right">11.74</td>
+<td align="right">5.75</td>
+<td align="right">13.01</td>
+<td align="right">19.06</td>
+<td align="right">28.79</td>
+<td align="right">60.56</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">1994</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">22.26</td>
+<td align="right">12.04</td>
+<td align="right">5.41</td>
+<td align="right">13.21</td>
+<td align="right">19.24</td>
+<td align="right">29.24</td>
+<td align="right">60.93</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">1995</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">22.49</td>
+<td align="right">12.29</td>
+<td align="right">5.20</td>
+<td align="right">13.21</td>
+<td align="right">19.27</td>
+<td align="right">29.45</td>
+<td align="right">61.19</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">1996</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">22.61</td>
+<td align="right">12.51</td>
+<td align="right">4.86</td>
+<td align="right">13.27</td>
+<td align="right">19.31</td>
+<td align="right">29.64</td>
+<td align="right">61.48</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">1997</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">22.62</td>
+<td align="right">12.67</td>
+<td align="right">4.66</td>
+<td align="right">13.17</td>
+<td align="right">19.48</td>
+<td align="right">29.73</td>
+<td align="right">61.65</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">1998</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">22.55</td>
+<td align="right">12.78</td>
+<td align="right">4.52</td>
+<td align="right">13.11</td>
+<td align="right">19.55</td>
+<td align="right">29.22</td>
+<td align="right">61.76</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">1999</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">22.42</td>
+<td align="right">12.86</td>
+<td align="right">4.43</td>
+<td align="right">12.90</td>
+<td align="right">19.22</td>
+<td align="right">28.88</td>
+<td align="right">61.91</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">2000</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">22.27</td>
+<td align="right">12.88</td>
+<td align="right">4.26</td>
+<td align="right">12.71</td>
+<td align="right">18.81</td>
+<td align="right">28.42</td>
+<td align="right">61.90</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">2001</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">22.13</td>
+<td align="right">12.88</td>
+<td align="right">4.19</td>
+<td align="right">12.49</td>
+<td align="right">18.45</td>
+<td align="right">28.49</td>
+<td align="right">61.83</td>
+<td align="left">▇▆▂▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">2002</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">22.00</td>
+<td align="right">12.85</td>
+<td align="right">4.12</td>
+<td align="right">12.27</td>
+<td align="right">18.26</td>
+<td align="right">28.44</td>
+<td align="right">61.62</td>
+<td align="left">▇▆▂▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">2003</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">21.91</td>
+<td align="right">12.81</td>
+<td align="right">4.11</td>
+<td align="right">12.19</td>
+<td align="right">18.00</td>
+<td align="right">28.23</td>
+<td align="right">61.43</td>
+<td align="left">▇▆▂▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">2004</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">21.82</td>
+<td align="right">12.76</td>
+<td align="right">4.19</td>
+<td align="right">12.14</td>
+<td align="right">17.88</td>
+<td align="right">28.10</td>
+<td align="right">60.95</td>
+<td align="left">▇▆▃▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">2005</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">21.70</td>
+<td align="right">12.69</td>
+<td align="right">4.31</td>
+<td align="right">12.03</td>
+<td align="right">17.72</td>
+<td align="right">28.07</td>
+<td align="right">60.37</td>
+<td align="left">▇▆▂▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">2006</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">21.52</td>
+<td align="right">12.60</td>
+<td align="right">4.38</td>
+<td align="right">12.12</td>
+<td align="right">17.41</td>
+<td align="right">27.90</td>
+<td align="right">59.75</td>
+<td align="left">▇▆▂▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">2007</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">21.27</td>
+<td align="right">12.49</td>
+<td align="right">4.49</td>
+<td align="right">12.09</td>
+<td align="right">17.15</td>
+<td align="right">27.48</td>
+<td align="right">59.18</td>
+<td align="left">▇▆▂▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">2008</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">20.97</td>
+<td align="right">12.36</td>
+<td align="right">4.64</td>
+<td align="right">11.86</td>
+<td align="right">16.86</td>
+<td align="right">26.83</td>
+<td align="right">58.87</td>
+<td align="left">▇▅▂▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">2009</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">20.62</td>
+<td align="right">12.21</td>
+<td align="right">4.84</td>
+<td align="right">11.70</td>
+<td align="right">16.50</td>
+<td align="right">26.28</td>
+<td align="right">58.56</td>
+<td align="left">▇▅▂▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">2010</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">20.26</td>
+<td align="right">12.05</td>
+<td align="right">4.99</td>
+<td align="right">11.57</td>
+<td align="right">16.10</td>
+<td align="right">25.78</td>
+<td align="right">58.33</td>
+<td align="left">▇▅▂▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">2011</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">19.86</td>
+<td align="right">11.86</td>
+<td align="right">5.13</td>
+<td align="right">11.29</td>
+<td align="right">15.64</td>
+<td align="right">24.80</td>
+<td align="right">57.91</td>
+<td align="left">▇▅▂▁▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">2012</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">19.38</td>
+<td align="right">11.63</td>
+<td align="right">5.22</td>
+<td align="right">11.12</td>
+<td align="right">15.16</td>
+<td align="right">24.13</td>
+<td align="right">57.25</td>
+<td align="left">▇▃▂▁▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">2013</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">18.81</td>
+<td align="right">11.32</td>
+<td align="right">5.09</td>
+<td align="right">10.71</td>
+<td align="right">14.59</td>
+<td align="right">23.49</td>
+<td align="right">56.26</td>
+<td align="left">▇▅▂▁▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">2014</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">18.13</td>
+<td align="right">10.95</td>
+<td align="right">4.78</td>
+<td align="right">10.34</td>
+<td align="right">14.22</td>
+<td align="right">22.38</td>
+<td align="right">56.07</td>
+<td align="left">▇▃▁▁▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="right">2015</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">17.41</td>
+<td align="right">10.53</td>
+<td align="right">4.44</td>
+<td align="right">10.00</td>
+<td align="right">13.75</td>
+<td align="right">20.99</td>
+<td align="right">56.28</td>
+<td align="left">▇▃▁▁▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="right">2016</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">16.65</td>
+<td align="right">10.09</td>
+<td align="right">4.07</td>
+<td align="right">9.59</td>
+<td align="right">13.16</td>
+<td align="right">19.70</td>
+<td align="right">56.26</td>
+<td align="left">▇▃▂▁▁</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">1990</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">63.69</td>
+<td align="right">10.62</td>
+<td align="right">16.42</td>
+<td align="right">57.45</td>
+<td align="right">63.94</td>
+<td align="right">70.49</td>
+<td align="right">87.76</td>
+<td align="left">▁▁▅▇▃</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">1991</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">61.41</td>
+<td align="right">11.16</td>
+<td align="right">14.08</td>
+<td align="right">55.05</td>
+<td align="right">62.29</td>
+<td align="right">67.60</td>
+<td align="right">86.99</td>
+<td align="left">▁▁▅▇▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">1992</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">59.13</td>
+<td align="right">11.68</td>
+<td align="right">12.58</td>
+<td align="right">52.43</td>
+<td align="right">60.46</td>
+<td align="right">66.17</td>
+<td align="right">85.89</td>
+<td align="left">▁▁▅▇▂</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">1993</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">56.96</td>
+<td align="right">12.13</td>
+<td align="right">11.47</td>
+<td align="right">50.04</td>
+<td align="right">58.11</td>
+<td align="right">65.41</td>
+<td align="right">84.38</td>
+<td align="left">▁▂▅▇▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">1994</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">54.95</td>
+<td align="right">12.49</td>
+<td align="right">10.74</td>
+<td align="right">48.00</td>
+<td align="right">56.11</td>
+<td align="right">64.08</td>
+<td align="right">82.44</td>
+<td align="left">▁▂▅▇▂</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">1995</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">53.13</td>
+<td align="right">12.77</td>
+<td align="right">10.37</td>
+<td align="right">46.19</td>
+<td align="right">54.33</td>
+<td align="right">62.69</td>
+<td align="right">79.79</td>
+<td align="left">▁▂▅▇▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">1996</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">51.51</td>
+<td align="right">12.97</td>
+<td align="right">9.98</td>
+<td align="right">44.29</td>
+<td align="right">52.61</td>
+<td align="right">61.54</td>
+<td align="right">79.28</td>
+<td align="left">▁▂▆▇▃</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">1997</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">50.08</td>
+<td align="right">13.09</td>
+<td align="right">9.74</td>
+<td align="right">42.79</td>
+<td align="right">51.09</td>
+<td align="right">60.53</td>
+<td align="right">78.69</td>
+<td align="left">▁▃▇▇▃</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">1998</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">48.83</td>
+<td align="right">13.15</td>
+<td align="right">9.49</td>
+<td align="right">41.42</td>
+<td align="right">49.58</td>
+<td align="right">59.24</td>
+<td align="right">78.29</td>
+<td align="left">▁▃▇▇▃</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">1999</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">47.76</td>
+<td align="right">13.16</td>
+<td align="right">9.38</td>
+<td align="right">40.37</td>
+<td align="right">48.41</td>
+<td align="right">58.12</td>
+<td align="right">77.85</td>
+<td align="left">▁▃▇▇▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">2000</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">46.85</td>
+<td align="right">13.14</td>
+<td align="right">9.24</td>
+<td align="right">39.72</td>
+<td align="right">47.53</td>
+<td align="right">56.94</td>
+<td align="right">77.44</td>
+<td align="left">▁▃▇▆▂</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">2001</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">46.10</td>
+<td align="right">13.08</td>
+<td align="right">9.14</td>
+<td align="right">39.27</td>
+<td align="right">46.52</td>
+<td align="right">55.78</td>
+<td align="right">77.22</td>
+<td align="left">▁▃▇▆▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">2002</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">45.51</td>
+<td align="right">12.99</td>
+<td align="right">9.21</td>
+<td align="right">38.81</td>
+<td align="right">45.87</td>
+<td align="right">54.80</td>
+<td align="right">76.88</td>
+<td align="left">▁▃▇▅▂</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">2003</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">45.01</td>
+<td align="right">12.90</td>
+<td align="right">9.30</td>
+<td align="right">38.17</td>
+<td align="right">45.58</td>
+<td align="right">54.28</td>
+<td align="right">76.36</td>
+<td align="left">▁▃▇▅▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">2004</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">44.57</td>
+<td align="right">12.80</td>
+<td align="right">9.49</td>
+<td align="right">37.85</td>
+<td align="right">44.99</td>
+<td align="right">53.55</td>
+<td align="right">76.15</td>
+<td align="left">▁▃▇▅▂</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">2005</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">44.15</td>
+<td align="right">12.69</td>
+<td align="right">9.82</td>
+<td align="right">37.02</td>
+<td align="right">44.45</td>
+<td align="right">53.22</td>
+<td align="right">75.83</td>
+<td align="left">▁▃▇▅▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">2006</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">43.75</td>
+<td align="right">12.58</td>
+<td align="right">10.19</td>
+<td align="right">36.52</td>
+<td align="right">43.99</td>
+<td align="right">52.35</td>
+<td align="right">75.60</td>
+<td align="left">▁▃▇▅▂</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">2007</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">43.35</td>
+<td align="right">12.49</td>
+<td align="right">10.56</td>
+<td align="right">36.48</td>
+<td align="right">43.36</td>
+<td align="right">52.09</td>
+<td align="right">75.16</td>
+<td align="left">▁▃▇▅▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">2008</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">43.05</td>
+<td align="right">12.38</td>
+<td align="right">10.30</td>
+<td align="right">36.46</td>
+<td align="right">42.97</td>
+<td align="right">51.67</td>
+<td align="right">74.53</td>
+<td align="left">▁▃▇▅▁</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">2009</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">42.91</td>
+<td align="right">12.27</td>
+<td align="right">10.15</td>
+<td align="right">36.75</td>
+<td align="right">42.62</td>
+<td align="right">51.37</td>
+<td align="right">74.12</td>
+<td align="left">▁▃▇▅▁</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">2010</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">43.05</td>
+<td align="right">12.17</td>
+<td align="right">10.11</td>
+<td align="right">36.78</td>
+<td align="right">42.89</td>
+<td align="right">51.13</td>
+<td align="right">73.90</td>
+<td align="left">▁▃▇▅▁</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">2011</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">43.52</td>
+<td align="right">12.02</td>
+<td align="right">10.31</td>
+<td align="right">37.08</td>
+<td align="right">43.55</td>
+<td align="right">51.36</td>
+<td align="right">73.62</td>
+<td align="left">▁▃▇▅▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">2012</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">44.31</td>
+<td align="right">11.87</td>
+<td align="right">10.74</td>
+<td align="right">37.78</td>
+<td align="right">44.39</td>
+<td align="right">52.22</td>
+<td align="right">73.82</td>
+<td align="left">▁▃▇▅▂</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">2013</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">45.47</td>
+<td align="right">11.67</td>
+<td align="right">11.41</td>
+<td align="right">38.84</td>
+<td align="right">45.55</td>
+<td align="right">53.77</td>
+<td align="right">74.72</td>
+<td align="left">▁▃▇▆▂</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">2014</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">46.99</td>
+<td align="right">11.39</td>
+<td align="right">12.42</td>
+<td align="right">40.89</td>
+<td align="right">47.09</td>
+<td align="right">55.11</td>
+<td align="right">76.16</td>
+<td align="left">▁▃▇▆▁</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="right">2015</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">48.95</td>
+<td align="right">11.03</td>
+<td align="right">14.05</td>
+<td align="right">43.29</td>
+<td align="right">49.04</td>
+<td align="right">57.02</td>
+<td align="right">77.83</td>
+<td align="left">▁▃▇▆▁</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="right">2016</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">51.21</td>
+<td align="right">10.64</td>
+<td align="right">16.59</td>
+<td align="right">45.51</td>
+<td align="right">51.48</td>
+<td align="right">59.15</td>
+<td align="right">79.73</td>
+<td align="left">▁▃▇▆▁</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>tidyfulldata %&gt;% select(-Period, -Location) %&gt;% group_by(Indicator) %&gt;% 
+    skim()</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-4">Table 1: </span>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">Piped data</td>
+</tr>
+<tr class="even">
+<td align="left">Number of rows</td>
+<td align="left">15066</td>
+</tr>
+<tr class="odd">
+<td align="left">Number of columns</td>
+<td align="left">4</td>
+</tr>
+<tr class="even">
+<td align="left">_______________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Column type frequency:</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">numeric</td>
+<td align="left">3</td>
+</tr>
+<tr class="odd">
+<td align="left">________________________</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Group variables</td>
+<td align="left">Indicator</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="left">Indicator</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+<th align="right">p0</th>
+<th align="right">p25</th>
+<th align="right">p50</th>
+<th align="right">p75</th>
+<th align="right">p100</th>
+<th align="left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="left">NonPregAn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">31.46</td>
+<td align="right">13.50</td>
+<td align="right">7.52</td>
+<td align="right">21.63</td>
+<td align="right">29.45</td>
+<td align="right">40.72</td>
+<td align="right">70.18</td>
+<td align="left">▅▇▅▃▁</td>
+</tr>
+<tr class="even">
+<td align="left">Prevalence</td>
+<td align="left">PregAn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">36.73</td>
+<td align="right">11.94</td>
+<td align="right">11.68</td>
+<td align="right">27.46</td>
+<td align="right">33.94</td>
+<td align="right">44.58</td>
+<td align="right">64.06</td>
+<td align="left">▂▇▆▃▃</td>
+</tr>
+<tr class="odd">
+<td align="left">Prevalence</td>
+<td align="left">ReprodAn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">31.77</td>
+<td align="right">13.49</td>
+<td align="right">7.68</td>
+<td align="right">21.94</td>
+<td align="right">29.73</td>
+<td align="right">41.19</td>
+<td align="right">69.60</td>
+<td align="left">▅▇▅▃▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="left">NonPregAn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">19.21</td>
+<td align="right">11.56</td>
+<td align="right">4.07</td>
+<td align="right">9.95</td>
+<td align="right">15.38</td>
+<td align="right">25.63</td>
+<td align="right">58.03</td>
+<td align="left">▇▅▂▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">LowerCI</td>
+<td align="left">PregAn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">23.77</td>
+<td align="right">12.55</td>
+<td align="right">6.34</td>
+<td align="right">14.31</td>
+<td align="right">19.03</td>
+<td align="right">28.98</td>
+<td align="right">61.91</td>
+<td align="left">▇▆▂▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">LowerCI</td>
+<td align="left">ReprodAn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">19.94</td>
+<td align="right">11.86</td>
+<td align="right">4.49</td>
+<td align="right">10.39</td>
+<td align="right">15.98</td>
+<td align="right">26.64</td>
+<td align="right">58.68</td>
+<td align="left">▇▅▂▂▁</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="left">NonPregAn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">47.18</td>
+<td align="right">15.00</td>
+<td align="right">9.14</td>
+<td align="right">38.06</td>
+<td align="right">46.70</td>
+<td align="right">57.61</td>
+<td align="right">87.76</td>
+<td align="left">▂▅▇▅▁</td>
+</tr>
+<tr class="even">
+<td align="left">UpperCI</td>
+<td align="left">PregAn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">52.08</td>
+<td align="right">9.87</td>
+<td align="right">14.04</td>
+<td align="right">45.23</td>
+<td align="right">52.75</td>
+<td align="right">60.34</td>
+<td align="right">68.38</td>
+<td align="left">▁▁▅▇▇</td>
+</tr>
+<tr class="odd">
+<td align="left">UpperCI</td>
+<td align="left">ReprodAn</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">46.98</td>
+<td align="right">14.69</td>
+<td align="right">9.24</td>
+<td align="right">37.94</td>
+<td align="right">46.45</td>
+<td align="right">57.53</td>
+<td align="right">84.78</td>
+<td align="left">▂▅▇▅▁</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>corr &lt;- tidyfulldata %&gt;% select_if(is.numeric) %&gt;% cor
+corr</code></pre>
+<pre><code>##                 Period Prevalence     LowerCI    UpperCI
+## Period      1.00000000 -0.2253962 -0.09740274 -0.3131130
+## Prevalence -0.22539623  1.0000000  0.92249582  0.8827849
+## LowerCI    -0.09740274  0.9224958  1.00000000  0.6538893
+## UpperCI    -0.31311301  0.8827849  0.65388928  1.0000000</code></pre>
+</div>
+<div id="visualizing-30-pts" class="section level4">
+<h4>4. Visualizing (30 pts)</h4>
+<pre><code>- Supporting paragraph or two (for each plot) describing the relationships/trends that are apparent</code></pre>
+<p>This is the heat map of the correlation of the numeric variables. The four numeric variables are period, overall prevalence, lower CI, and upper CI. As predicted, overall prevalence was positively correlated with both lower CI and upper CI. Upper CI and lower CI were positively correlated though not as correlated as I expected. Period was negatively correlated with all other variables showing that as time goes on, anemia prevalence has decreased overall.</p>
+<pre class="r"><code>tidycor &lt;- corr %&gt;% as.data.frame %&gt;% rownames_to_column %&gt;% 
+    pivot_longer(-1, names_to = &quot;name&quot;, values_to = &quot;correlation&quot;)
+
+tidycor %&gt;% ggplot(aes(rowname, name, fill = correlation)) + 
+    geom_tile() + scale_fill_gradient2(high = &quot;thistle3&quot;, low = &quot;thistle&quot;) + 
+    geom_text(aes(label = round(correlation, 2)), color = &quot;black&quot;, 
+        size = 4) + theme(axis.text.x = element_text(angle = 30, 
+    hjust = 1)) + coord_fixed() + ggtitle(&quot;Correlation Heat Map&quot;, 
+    subtitle = &quot;Anemia Prevalence&quot;) + theme(axis.title.x = element_blank(), 
+    axis.title.y = element_blank()) + labs(fill = &quot;Correlation&quot;)</code></pre>
+<p><img src="/Project1_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" />
+This second graph explores the trend of global anemia prevalence in pregnant, non-pregnant, and reproductive age women from 1990 to 2016. As seen in the graph, all three anemia indicators decrease until roughly 2011 as which point there is a slight uptake in all indicators. Nonpregnant and reproductive age women had most similar rates of anemia as those populations overlap the most.</p>
+<pre class="r"><code>tidyfulldata %&gt;% ggplot() + geom_point(aes(Period, Prevalence, 
+    color = Indicator), stat = &quot;summary&quot;) + ggtitle(&quot;Female Anemia Prevalence&quot;, 
+    subtitle = &quot;Pregnant, Nonpregnant, and Reproductive Age Women from 1990 to 2016&quot;) + 
+    scale_color_manual(values = c(&quot;plum1&quot;, &quot;plum&quot;, &quot;plum4&quot;), 
+        labels = c(&quot;Nonpregnant&quot;, &quot;Pregnant&quot;, &quot;Reproductive Age&quot;)) + 
+    ylab(&quot;Prevalence (%)&quot;) + theme_classic() + scale_x_continuous(breaks = seq(1990, 
+    2015, 5))</code></pre>
+<p><img src="/Project1_files/figure-html/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" />
+These two maps depict the anemia prevalence in reproductive age women in 1990 and then again in 2016. Darker colors indicate a higher anemia prevalence while lighter colors depict a lower anemia prevalence. There were slight changes between 1990 and 2016. Anemia rates seem to increase in the east while rate seem to decrease in the west.</p>
+<pre class="r"><code>library(&quot;rworldmap&quot;)
+tidyfulldataworld1990 &lt;- tidyfulldata %&gt;% select(-LowerCI, -UpperCI) %&gt;% 
+    filter(Indicator == &quot;ReprodAn&quot; &amp; Period == 1990) %&gt;% distinct() %&gt;% 
+    joinCountryData2Map(tidyfulldata, joinCode = &quot;NAME&quot;, nameJoinColumn = &quot;Location&quot;)</code></pre>
+<pre><code>## 181 codes from your data successfully matched countries in the map
+## 5 codes from your data failed to match with a country code in the map
+## 62 codes from the map weren&#39;t represented in your data</code></pre>
+<pre class="r"><code>tidyfulldataworld2016 &lt;- tidyfulldata %&gt;% select(-LowerCI, -UpperCI) %&gt;% 
+    filter(Indicator == &quot;ReprodAn&quot; &amp; Period == 2016) %&gt;% distinct() %&gt;% 
+    joinCountryData2Map(tidyfulldata, joinCode = &quot;NAME&quot;, nameJoinColumn = &quot;Location&quot;)</code></pre>
+<pre><code>## 182 codes from your data successfully matched countries in the map
+## 4 codes from your data failed to match with a country code in the map
+## 61 codes from the map weren&#39;t represented in your data</code></pre>
+<pre class="r"><code>mapDevice()
+mapCountryData(tidyfulldataworld1990, nameColumnToPlot = &quot;Prevalence&quot;, 
+    colourPalette = c(&quot;thistle1&quot;, &quot;thistle3&quot;, &quot;thistle4&quot;), mapTitle = &quot;1990 Anemia Prevalence in Reproductive Age Women&quot;)
+
+mapCountryData(tidyfulldataworld2016, nameColumnToPlot = &quot;Prevalence&quot;, 
+    colourPalette = c(&quot;thistle1&quot;, &quot;thistle3&quot;, &quot;thistle4&quot;), mapTitle = &quot;2016 Anemia Prevalence in Reproductive Age Women&quot;)</code></pre>
+</div>
+<div id="dimensionality-reduction" class="section level4">
+<h4>Dimensionality Reduction</h4>
+<p>As many of my variables are catagorical, I used the daisy function to compute the gower dissimilarities. I then used that to cluster using partioning around medoids (PAM) methods of clustering. I chose 3 clusters after looking at a plot of the silloutte width. After clustering, the average silloutte width was 0.323 which indicates that the structure is weak and could be artificial. In the visualization, the indicator was the only variable the clusters clearly distinguished. All other variables were not separated from each other.</p>
+<pre class="r"><code>library(cluster)
+sil_width &lt;- vector()
+for (i in 2:10) {
+    pam_fit &lt;- tidyfulldata %&gt;% pam(i)
+    sil_width[i] &lt;- pam_fit$silinfo$avg.width
+}
+ggplot() + geom_line(aes(x = 1:10, y = sil_width)) + scale_x_continuous(name = &quot;k&quot;, 
+    breaks = 1:10)</code></pre>
+<p><img src="/Project1_files/figure-html/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>gower1 &lt;- tidyfulldata %&gt;% mutate_if(is.character, as.factor) %&gt;% 
+    daisy(metric = &quot;gower&quot;)
+pam1 &lt;- pam(gower1, k = 3, diss = T)
+pam1$silinfo$avg.width</code></pre>
+<pre><code>## [1] 0.3234321</code></pre>
+<pre class="r"><code>final &lt;- tidyfulldata %&gt;% mutate(cluster = as.factor(pam1$clustering))
+library(GGally)
+ggpairs(final, columns = 2:7, aes(color = Indicator))</code></pre>
+<p><img src="/Project1_files/figure-html/unnamed-chunk-8-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+</div>

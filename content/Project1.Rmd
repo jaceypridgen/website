@@ -1,0 +1,204 @@
+---
+title: 'Project 1: Exploratory Data Analysis'
+author: "SDS348"
+date: ''
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+  pdf_document:
+    toc: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
+## Data Wrangling and Data Exploration
+
+### Introduction
+
+Anemia is prevelent in women globally. I chose three World Health Organization datasets and joined them. One dataset details the prevelence of anemia in pregnant women, one dataset describes the anemia prevelence in non-pregnant women, and the final dataset details the anemia prevalence in women of reproductive age. These datasets detail the anemia prevalence from 1990 to 2016 across all countries.Each original data set has a variable for country, period, and anemia prevalence with 90% confidence interval in a single variable
+
+#### Data
+
+```{R}
+library(tidyverse)
+NotPregAn <- read.csv("anemianotpreg.csv")
+PregAn <- read.csv("anemiapregnant.csv")
+ReprodAn <- read.csv("anemiareprod.csv")
+```
+
+#### Tidy Data
+
+For each of my datasets, I used pivot wider move the indicator name to the name of a varible and moved the values into that column. I then separated the convidence interval from the prevalence value using the separate function.
+    
+```{R}
+glimpse(NotPregAn)
+TidyNotPregAn <- NotPregAn %>% 
+  pivot_wider(names_from = "Indicator", values_from = "First.Tooltip") %>% 
+  rename("NonPregAnPrevalence" = `Prevalence of anaemia in non-pregnant women (%)`)%>% 
+  separate(NonPregAnPrevalence, into = c("NonPregAnPrev","NonPregAnCI"), sep = " ")
+glimpse(TidyNotPregAn)
+
+glimpse(PregAn)
+TidyPregAn <- PregAn %>%
+  pivot_wider(names_from = "Indicator", values_from = "First.Tooltip") %>% 
+  rename("PregAnPrevalence" = `Prevalence of anaemia in pregnant women (%)`) %>%
+  separate(PregAnPrevalence, into = c("PregAnPrev","PregAnCI"), sep = " ")
+glimpse(TidyPregAn)
+
+glimpse(ReprodAn)
+TidyReprodAn <- ReprodAn %>%
+  pivot_wider(names_from = "Indicator", values_from = "First.Tooltip") %>% 
+  rename("ReprodAnPrevalence" = `Prevalence of anaemia in women of reproductive age (%)`) %>%
+  separate(ReprodAnPrevalence, into = c("ReprodAnPrev","ReprodAnCI"), sep = " ")
+glimpse(TidyReprodAn)
+```
+
+#### Joining
+
+I completed a full join becasue I wanted to keep as much data as possible. Because all three data sets came from the same source, I assume they each had the same countries and country names. Nevertheless, I choose a full join to preserve the most data. After the first full join, I had to complete a second full join to add the third data set. Again, full join was chosen to keep the most ammount of data. After joining all three data sets, I needed to tidy my data. I first used pivot_longer to move all of my prevelence indicators into one column and all of their prevalence values into one column. I did another pivot_longer to move all of the indicator confidence interval labels into a column and their values into one column. When I did this second pivot_longer, this duplicated the entire joined data set. I then had to filter the data sets so that the prevalence indicator equaled the confidence interval indicator. Overall, the new cleaned and tidy dataset has a Location varible of all countries; a Period variable of from 1990 to 2016; an Indicator variable of either reproductive age women, pregnant women, or non-pregnant women; a Prevalence variable of the prevalence value; a LowerCI variable of the lower confidence interval; and an UpperCI variable of the upper confidence interval. 
+
+```{R}
+fulldata <- full_join(TidyNotPregAn, TidyPregAn)
+fulldata <- full_join(fulldata, TidyReprodAn)
+glimpse(fulldata)
+
+tidyfulldata <- fulldata %>% 
+  pivot_longer(cols = contains("Prev"), names_to = "IndicatorPrev", values_to = "Prevalence") %>%
+  pivot_longer(cols = contains("CI"), names_to = "IndicatorCI", values_to = "CI") %>%
+  separate(IndicatorPrev, into = c("Indicator", "Prev"), sep = "Prev") %>%
+  select(-Prev) %>%
+  separate(IndicatorCI, into = c("Indicator2", "CI2"), sep = "CI") %>%
+  select(-CI2) %>%
+  filter(Indicator == Indicator2) %>% 
+  select(-Indicator2) %>% 
+  separate(CI, into = c("LowerCI", "UpperCI"), sep = "-") %>%
+  separate(LowerCI, into = c("Trash", "LowerCI"), sep = 1) %>% 
+  separate(UpperCI, into = c("UpperCI", "Trash"), sep = "]") %>%
+  select(-Trash) %>%
+  mutate(LowerCI = as.numeric(LowerCI)) %>%
+  mutate(Prevalence = as.numeric(Prevalence)) %>% 
+  mutate(UpperCI = as.numeric(UpperCI))
+glimpse(tidyfulldata)
+tidyfulldata
+```
+#### Wrangling
+
+I used all six diplyr to find the average anemia prevalence by county and indicator from 2010 to 2016. I then used the skimr function to find the overall mean, standard deviation, minimum, maximum, median, first quartile, and third quartlie anemia prevalence. Globally from 1990 to 2016, the mean anemia prevalence was 33.3% , the standard deviation was 13.2%, the minimum was 7.52%, the first quartile was 23.7%, the median was 31.4%, the third quartile was 42.0%, and the maximum was 70.2%. The Lower CI and the Upper CI were also summarized, but they are less significant as they relate directly to the overall prevalence. I then grouped by period and summarized and then grouped by indicator and summarized. The grouped by period summary provides the mean, standard deviation, minimum, maximum, median, first quartile, and third quartlie anemia prevalence for each year from 1990 to 2016.The grouped by indicator summary provides the mean, standard deviation, minimum, maximum, median, first quartile, and third quartlie anemia prevalence across all countries during the 1990 to 2016 timeframe for reproductive age women, pregnant women, and nonpregnant women. I also analyzed the corrlation between the variables. Period was negatively correlated with all numeric variables indicating that over time, anemia prevalence has decreased overall. As expected, the prevelence was closely positively correlated with the lower CI (.922) and the upper CI (.883). 
+```{R}
+tidyfulldata <- tidyfulldata %>% na.omit
+
+tidyfulldata %>% 
+  group_by(Location) %>% 
+  filter(Period == 2016 | Period == 2015 | Period == 2014 | Period == 2013 | Period == 2012| Period == 2011| Period == 2010) %>% 
+  select(-Period) %>%
+  arrange(desc(Location)) %>%
+  mutate(Proportion = Prevalence/100) %>%
+  group_by(Location, Indicator) %>%
+  summarize_all(mean)
+
+library(skimr)
+
+tidyfulldata %>% 
+  skim()
+
+tidyfulldata %>% 
+  select(-Location) %>%
+  group_by(Period) %>% 
+  skim()
+
+tidyfulldata %>% 
+  select(-Period, -Location) %>% 
+  group_by(Indicator) %>% 
+  skim()
+
+corr <- tidyfulldata %>%
+  select_if(is.numeric) %>%
+  cor
+corr
+```
+#### 4. Visualizing (30 pts)
+    - Supporting paragraph or two (for each plot) describing the relationships/trends that are apparent
+  
+This is the heat map of the correlation of the numeric variables. The four numeric variables are period, overall prevalence, lower CI, and upper CI. As predicted, overall prevalence was positively correlated with both lower CI and upper CI. Upper CI and lower CI were positively correlated though not as correlated as I expected. Period was negatively correlated with all other variables showing that as time goes on, anemia prevalence has decreased overall. 
+```{R}
+tidycor <- corr %>% 
+  as.data.frame %>%
+  rownames_to_column %>%
+  pivot_longer(-1, names_to = "name", values_to = "correlation")
+
+tidycor%>%ggplot(aes(rowname,name,fill=correlation))+
+  geom_tile()+
+  scale_fill_gradient2(high = "thistle3", low = "thistle")+
+  geom_text(aes(label=round(correlation,2)),color = "black", size = 4)+ 
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
+  coord_fixed() +
+  ggtitle("Correlation Heat Map", subtitle = "Anemia Prevalence") + 
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()) + 
+  labs(fill = "Correlation")
+```
+This second graph explores the trend of global anemia prevalence in pregnant, non-pregnant, and reproductive age women from 1990 to 2016. As seen in the graph, all three anemia indicators decrease until roughly 2011 as which point there is a slight uptake in all indicators. Nonpregnant and reproductive age women had most similar rates of anemia as those populations overlap the most. 
+```{R}
+tidyfulldata %>%
+  ggplot() +
+  geom_point(aes(Period, Prevalence, color = Indicator), stat = "summary") +
+  ggtitle("Female Anemia Prevalence", subtitle = "Pregnant, Nonpregnant, and Reproductive Age Women from 1990 to 2016") +
+  scale_color_manual(values = c("plum1", "plum", "plum4"), labels=c("Nonpregnant","Pregnant","Reproductive Age")) +
+  ylab("Prevalence (%)") + theme_classic() +
+  scale_x_continuous(breaks=seq(1990, 2015, 5))
+  
+```
+These two maps depict the anemia prevalence in reproductive age women in 1990 and then again in 2016. Darker colors indicate a higher anemia prevalence while lighter colors depict a lower anemia prevalence. There were slight changes between 1990 and 2016. Anemia rates seem to increase in the east while rate seem to decrease in the west. 
+
+```{R}
+library("rworldmap")
+tidyfulldataworld1990 <- 
+  tidyfulldata %>%
+  select(-LowerCI, -UpperCI) %>% 
+  filter(Indicator == "ReprodAn" & Period == 1990) %>%
+  distinct() %>%
+  joinCountryData2Map(tidyfulldata, joinCode = 'NAME', nameJoinColumn = 'Location')
+tidyfulldataworld2016 <- 
+  tidyfulldata %>%
+  select(-LowerCI, -UpperCI) %>% 
+  filter(Indicator == "ReprodAn" & Period == 2016) %>%
+  distinct() %>%
+  joinCountryData2Map(tidyfulldata, joinCode = 'NAME', nameJoinColumn = 'Location')
+mapDevice()
+mapCountryData(tidyfulldataworld1990, 
+               nameColumnToPlot = "Prevalence",
+               colourPalette = c("thistle1", "thistle3", "thistle4"),
+               mapTitle = "1990 Anemia Prevalence in Reproductive Age Women")
+               
+mapCountryData(tidyfulldataworld2016, 
+               nameColumnToPlot = "Prevalence",
+               colourPalette = c("thistle1", "thistle3", "thistle4"),
+               mapTitle = "2016 Anemia Prevalence in Reproductive Age Women")
+```
+
+#### Dimensionality Reduction
+
+As many of my variables are catagorical, I used the daisy function to compute the gower dissimilarities. I then used that to cluster using partioning around medoids (PAM) methods of clustering. I chose 3 clusters after looking at a plot of the silloutte width. After clustering, the average silloutte width was 0.323 which indicates that the structure is weak and could be artificial. In the visualization, the indicator was the only variable the clusters clearly distinguished. All other variables were not separated from each other. 
+
+```{R}
+library(cluster)
+sil_width<- vector()
+for(i in 2:10){
+  pam_fit <- tidyfulldata%>% pam(i)
+  sil_width[i] <- pam_fit$silinfo$avg.width
+}
+ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name="k",breaks=1:10)
+
+gower1 <- tidyfulldata%>%
+  mutate_if(is.character,as.factor) %>% 
+  daisy(metric = "gower")
+pam1 <- pam(gower1, k = 3, diss = T)
+pam1$silinfo$avg.width
+final <- tidyfulldata %>% mutate(cluster = as.factor(pam1$clustering))
+library(GGally)
+ggpairs(final, columns=2:7, aes(color=Indicator))
+```

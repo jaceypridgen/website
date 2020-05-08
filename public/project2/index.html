@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Jacey Pridgen" />
+    <meta name="description" content="Describe your website">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Project 2: Modeling, Testing, and Predicting</title>
+    <meta name="generator" content="Hugo 0.70.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/project2/">Project 2: Modeling, Testing, and Predicting</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          January 1, 0001
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="modeling" class="section level1">
+<h1>Modeling</h1>
+<p>This is the Washington Health Workforce Survey Data, a survey of health practitioners in Washington State. There are 128 variables and roughly 60,000 observations. Each observation is the survey response of a healthcare practitioner.I have only selected the variable in which a majority of the respondants provided responses and there were less than five levels if the variable was categorical. ActiveCredentialOtherState is a binary categorical variable detailing whether a health practitioner has an active credential in another state. AnnualWeeksWorked is a numeric variable describing the annual number of weeks worked. BirthYear is the birth year of the health practitioner. CommunicateOtherLanguge is a binary categorical variable describing whether the practitioner speaks another language. HighestEducationOnline is a binary variable stating whether the highest education achieved was from an online program. HighestEducationYear is the year in which the highest education was achieved. NumberYearsPracticeWashington is the number of years practiced in Washington. NumberYearsPrimaryPracticeLocation is the number of years practice at the health workers primary practice location. WorkStatus is whether they are currently working. After selecting for these variables and omiting NAs, 9 variables with 46,356 observations remained.</p>
+<pre class="r"><code>healthdata &lt;- read.csv(&quot;Washington_Health_Workforce_Survey_data.csv&quot;, header = T, na.strings = c(&quot;&quot;, &quot; &quot;, &quot;NA&quot;))
+healthdata &lt;- healthdata %&gt;% 
+  select(ActiveCredentialOtherState, AnnualWeeksWorked, BirthYear,
+         CommunicateOtherLanguage, HighestEducationOnline, HighestEducationYear,
+         NumberYearsPracticeWashington, NumberYearsPrimaryPracticeLocation, WorkStatus)%&gt;%
+  na.omit() %&gt;%
+  mutate(BirthYear = as.numeric(BirthYear)) %&gt;%
+  mutate(HighestEducationYear = as.numeric(HighestEducationYear)) %&gt;%
+  mutate(ActiveCredentialOtherState = as.logical(ActiveCredentialOtherState)) %&gt;%
+  mutate(CommunicateOtherLanguage = as.logical(CommunicateOtherLanguage)) %&gt;%
+  mutate(HighestEducationOnline = as.logical(HighestEducationOnline)) %&gt;%
+  mutate(WorkStatus = as.logical(WorkStatus))
+glimpse(healthdata)</code></pre>
+<pre><code>## Observations: 46,545
+## Variables: 9
+## $ ActiveCredentialOtherState &lt;lgl&gt; TRUE, TRUE, FALSE,
+FALSE, TRUE, FALSE, FALSE, FALSE, T…
+## $ AnnualWeeksWorked &lt;dbl&gt; 50, 45, 51, 50, 48, 49, 52,
+43, 52, 50, 0, 48, 32, 52,…
+## $ BirthYear &lt;dbl&gt; 1962, 1958, 1984, 1987, 1982, 1976,
+1974, 1974, 1988, …
+## $ CommunicateOtherLanguage &lt;lgl&gt; FALSE, FALSE, FALSE,
+FALSE, FALSE, FALSE, FALSE, FALSE…
+## $ HighestEducationOnline &lt;lgl&gt; FALSE, FALSE, FALSE,
+FALSE, FALSE, FALSE, FALSE, FALSE…
+## $ HighestEducationYear &lt;dbl&gt; 1989, 1995, 2012, 2011,
+2006, 2005, 2001, 1998, 2010, …
+## $ NumberYearsPracticeWashington &lt;dbl&gt; 18.0, 1.0, 6.0,
+3.0, 10.0, 10.0, 16.0, 17.0, 2.0, 7.0,…
+## $ NumberYearsPrimaryPracticeLocation &lt;dbl&gt; 1.0, 1.0,
+3.0, 1.0, 10.0, 10.0, 3.0, 17.0, 2.0, 7.0, 1…
+## $ WorkStatus &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
+TRUE, TRUE, TRUE, …</code></pre>
+<div id="section" class="section level2">
+<h2><strong>1.</strong></h2>
+<p>A MANOVA test was complted to explore whether Annual Weeks Worked, Birth Year, Highest Education Year, Number of Years Practicing in Washington, or Number of Years at Primary Practice Location differed by WorkStatus.
+To determine if the MANOVA assumptions were met, several tests were completed.
+This survey was distributed to all heathcare workers in Washington once, thus each observation is independent of each other. All groups have more than 25 responses, therefore, multivariate normality of dependent variables is assumed.</p>
+<pre class="r"><code>count(healthdata, healthdata$ActiveCredentialOtherState)</code></pre>
+<pre><code>## # A tibble: 2 x 2
+##   `healthdata$ActiveCredentialOtherState`     n
+##   &lt;lgl&gt;                                   &lt;int&gt;
+## 1 FALSE                                   32865
+## 2 TRUE                                    13680</code></pre>
+<pre class="r"><code>count(healthdata, healthdata$CommunicateOtherLanguage)</code></pre>
+<pre><code>## # A tibble: 2 x 2
+##   `healthdata$CommunicateOtherLanguage`     n
+##   &lt;lgl&gt;                                 &lt;int&gt;
+## 1 FALSE                                 34719
+## 2 TRUE                                  11826</code></pre>
+<pre class="r"><code>count(healthdata, healthdata$HighestEducationOnline)</code></pre>
+<pre><code>## # A tibble: 2 x 2
+##   `healthdata$HighestEducationOnline`     n
+##   &lt;lgl&gt;                               &lt;int&gt;
+## 1 FALSE                               43841
+## 2 TRUE                                 2704</code></pre>
+<pre class="r"><code>count(healthdata, healthdata$WorkStatus)</code></pre>
+<pre><code>## # A tibble: 2 x 2
+##   `healthdata$WorkStatus`     n
+##   &lt;lgl&gt;                   &lt;int&gt;
+## 1 FALSE                      60
+## 2 TRUE                    46485</code></pre>
+<pre class="r"><code>glimpse(healthdata)</code></pre>
+<pre><code>## Observations: 46,545
+## Variables: 9
+## $ ActiveCredentialOtherState &lt;lgl&gt; TRUE, TRUE, FALSE,
+FALSE, TRUE, FALSE, FALSE, FALSE, T…
+## $ AnnualWeeksWorked &lt;dbl&gt; 50, 45, 51, 50, 48, 49, 52,
+43, 52, 50, 0, 48, 32, 52,…
+## $ BirthYear &lt;dbl&gt; 1962, 1958, 1984, 1987, 1982, 1976,
+1974, 1974, 1988, …
+## $ CommunicateOtherLanguage &lt;lgl&gt; FALSE, FALSE, FALSE,
+FALSE, FALSE, FALSE, FALSE, FALSE…
+## $ HighestEducationOnline &lt;lgl&gt; FALSE, FALSE, FALSE,
+FALSE, FALSE, FALSE, FALSE, FALSE…
+## $ HighestEducationYear &lt;dbl&gt; 1989, 1995, 2012, 2011,
+2006, 2005, 2001, 1998, 2010, …
+## $ NumberYearsPracticeWashington &lt;dbl&gt; 18.0, 1.0, 6.0,
+3.0, 10.0, 10.0, 16.0, 17.0, 2.0, 7.0,…
+## $ NumberYearsPrimaryPracticeLocation &lt;dbl&gt; 1.0, 1.0,
+3.0, 1.0, 10.0, 10.0, 3.0, 17.0, 2.0, 7.0, 1…
+## $ WorkStatus &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
+TRUE, TRUE, TRUE, …</code></pre>
+<p>The assumption for homogeneity of within-group covariance matrices is not met because the p-value for the Box_m test is significantly less than 0.05.</p>
+<pre class="r"><code>library(heplots)
+numhealthdata &lt;- healthdata %&gt;% select(AnnualWeeksWorked, BirthYear, HighestEducationYear, NumberYearsPracticeWashington, NumberYearsPrimaryPracticeLocation, WorkStatus)
+boxM(numhealthdata[,1:5], numhealthdata[,&quot;WorkStatus&quot;] )</code></pre>
+<pre><code>## 
+##  Box&#39;s M-test for Homogeneity of Covariance Matrices
+## 
+## data:  numhealthdata[, 1:5]
+## Chi-Sq (approx.) = 104.04, df = 15, p-value = 2.225e-15</code></pre>
+<p>Though some assumptions for MANOVA were violated, the MANOVA test was still completed.</p>
+<pre class="r"><code>man &lt;- manova(cbind(AnnualWeeksWorked, BirthYear, HighestEducationYear, NumberYearsPracticeWashington, NumberYearsPrimaryPracticeLocation)~WorkStatus, data = numhealthdata)
+summary(man)</code></pre>
+<pre><code>## Df Pillai approx F num Df den Df Pr(&gt;F)
+## WorkStatus 1 0.0039267 36.693 5 46539 &lt; 2.2e-16 ***
+## Residuals 46543
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<p>The p-value was less than 0.05, so an ANOVA test was completed to find variables showing a mean difference across work status.</p>
+<pre class="r"><code>summary.aov(man)</code></pre>
+<pre><code>## Response AnnualWeeksWorked :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## WorkStatus 1 40472 40472 181.06 &lt; 2.2e-16 ***
+## Residuals 46543 10403651 224
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response BirthYear :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## WorkStatus 1 71 71.458 0.4792 0.4888
+## Residuals 46543 6940141 149.112
+##
+## Response HighestEducationYear :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## WorkStatus 1 1 0.923 0.0093 0.9231
+## Residuals 46543 4616541 99.189
+##
+## Response NumberYearsPracticeWashington :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## WorkStatus 1 165 165.040 2.0379 0.1534
+## Residuals 46543 3769335 80.986
+##
+## Response NumberYearsPrimaryPracticeLocation :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## WorkStatus 1 56 56.021 0.2543 0.6141
+## Residuals 46543 10253196 220.295</code></pre>
+<p>Only Annual Weeks Worked showed a mean difference across Work Status. Because work status is a binary variable, a t-test was not needed to determine what level of the Work Status variable Annual Weeks Worked differed by.</p>
+<p>In total, six tests were completed, one MANOVA and five ANOVAs. Because a large number of tests were completed, the p-value must be adjusted.</p>
+<pre class="r"><code>1-0.95^6</code></pre>
+<pre><code>## [1] 0.2649081</code></pre>
+<pre class="r"><code>0.05/6</code></pre>
+<pre><code>## [1] 0.008333333</code></pre>
+<p>The probability of at least one type I error is 0.265. The Bonferroni corrected p-value is 0.0083. After correcting the p-value, the MANOVA and the Work Status to Annual Weeks Worked ANOVA were still statistically significant. There is a mean difference in the annual number of weeks worked for workers compared to non-workers (p-value &lt; 2.2e-16)</p>
+</div>
+<div id="section-1" class="section level2">
+<h2><strong>2.</strong></h2>
+<p>The true mean difference in annual number of weeks worked if a person is a worker versus if they are not a worker is 25.989 weeks.</p>
+<pre class="r"><code>mean(healthdata[healthdata$WorkStatus == &quot;TRUE&quot;,]$AnnualWeeksWorked) -
+  mean(healthdata[healthdata$WorkStatus == &quot;FALSE&quot;,]$AnnualWeeksWorked)</code></pre>
+<pre><code>## [1] 25.98855</code></pre>
+<p>A randomization test was complete to explore whether mean annual weeks worked was different if a person had a work status of true or a work status of false.</p>
+<p>Ho: There is not a difference in the mean annual number of weeks worked if a person is currently working compared to if they are not working.<br />
+Ha: There is a difference in the mean annual number of weeks worked if a person is currently working compared to if they are not working.</p>
+<pre class="r"><code>set.seed(1234)
+rand_dist &lt;- vector()
+for(i in 1:5000){
+  new&lt;- data.frame(AnnualWeeksWorked = sample(healthdata$AnnualWeeksWorked), WorkStatus = healthdata$WorkStatus)
+  rand_dist[i] &lt;- mean(new[new$WorkStatus == &quot;TRUE&quot;,]$AnnualWeeksWorked) -
+                  mean(new[new$WorkStatus == &quot;FALSE&quot;,]$AnnualWeeksWorked)
+}</code></pre>
+<p>The calculated p-value is 0. This is because in the random distribution, there was never an occurance of the calculated mean being greater than 25.989 or less than -25.989. Therefore, we can reject the null hypothesis. We have strong evidence that there is a difference in the mean annual number of weeks worked if a person is currently working compared to if they are not working (p-value &lt;&lt;&lt; 0.0001)</p>
+<pre class="r"><code>mean(rand_dist&gt;25.989 | rand_dist &lt; -25.989)</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>A histogram was plotted of the random distrubution with the true mean as a verticle line.</p>
+<pre class="r"><code>library(ggthemr)
+colors &lt;- c(&quot;#444444&quot;,&quot;#de6757&quot; ,&quot;#3262AB&quot;, &quot;#EB9050&quot; ,&quot;#FF8D7D&quot;, &quot;#C8E370&quot;,&quot;#C45B4D&quot;, &quot;#41a65c&quot;, &quot;#5E2C25&quot; ,&quot;#78695F&quot;)
+custom &lt;- define_palette(
+  swatch = colors,
+  gradient = c(lower = colors[1L], upper = colors[2L])
+)
+ggthemr(custom, &#39;clean&#39;)
+ggplot() +
+  geom_histogram(aes(rand_dist), binwidth = 1)+
+  xlim(-8, 30) +
+  geom_vline(xintercept = 25.989, color = &quot;black&quot;) +
+  scale_y_continuous(expand = c(0,0)) +
+  xlab(&quot;Random Distribution&quot;) +
+  ylab(&quot;Count&quot;)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-10-1.png" width="768" style="display: block; margin: auto;" />
+## <strong>3.</strong></p>
+<p>To explore whether annual number of weeks works can be predicted by birth year or whether a health workers has an active credential in another state, a linear regression model was made. Annual weeks worked and birth year were first mean centered.</p>
+<pre class="r"><code>healthdata$AnnualWeeksWorked_c &lt;- healthdata$AnnualWeeksWorked -
+  mean(healthdata$AnnualWeeksWorked)
+healthdata$BirthYear_c &lt;- healthdata$BirthYear - mean(healthdata$BirthYear)
+healthdata$NumberYearsPrimaryPracticeLocation_c &lt;- healthdata$NumberYearsPrimaryPracticeLocation - mean(healthdata$NumberYearsPrimaryPracticeLocation)
+
+fit &lt;- lm(AnnualWeeksWorked_c ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)
+summary(fit)</code></pre>
+<pre><code>##
+## Call:
+## lm(formula = AnnualWeeksWorked_c ~
+ActiveCredentialOtherState +
+## BirthYear_c + ActiveCredentialOtherState * BirthYear_c,
+data = healthdata)
+##
+## Residuals:
+## Min 1Q Median 3Q Max
+## -47.080 -0.637 6.743 8.646 58.602
+##
+## Coefficients:
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 0.308348 0.082360 3.744 0.000181 ***
+## ActiveCredentialOtherStateTRUE -0.991236 0.152258 -6.510
+7.58e-11 ***
+## BirthYear_c -0.115828 0.006679 -17.341 &lt; 2e-16 ***
+## ActiveCredentialOtherStateTRUE:BirthYear_c 0.056117
+0.012651 4.436 9.19e-06 ***
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Residual standard error: 14.92 on 46541 degrees of
+freedom
+## Multiple R-squared: 0.007785, Adjusted R-squared:
+0.007721
+## F-statistic: 121.7 on 3 and 46541 DF, p-value: &lt; 2.2e-16</code></pre>
+<p>For people with average birth years, a person with an active credential in another state is predicted to work 0.999 weeks less than a person without an active credential in another state.</p>
+<p>Controlling for active credential status, for every one year decrease in birth year, the annual number of weeks worked decreases by 0.116 weeks.</p>
+<p>The slope for birth year on annual weeks worked is 0.056 higher for people with active credentials in other states than people without active credentials in other states.</p>
+<pre class="r"><code>ggplot(healthdata, aes(x = BirthYear_c, y = AnnualWeeksWorked_c, color = ActiveCredentialOtherState)) +
+  geom_point() +
+  geom_smooth(method = &quot;lm&quot;)+
+  xlab(&quot;Centered Birth Year&quot;) +
+  ylab(&quot;Centered Annual Weeks Worked&quot;) + 
+  labs(color = &quot;Active Credential in Other State&quot;) +
+  theme(legend.position = c(0.25, 0.9)) +
+  guides(color = guide_legend(reverse = TRUE))</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-12-1.png" width="768" style="display: block; margin: auto;" />
+To determine whether the assumptions of a linear regression model were met, several plots were created. Linearity was first plotted, then normality of residuals, then homoskedsaticity was explored via a plot of residuals versus the fitted values.</p>
+<p>From the scatter plot of birth year versus annual weeks worked by whether a person has an active credential in another state, there is not a clear linear relationship between these variables. This violates the linear assumption.</p>
+<pre class="r"><code>ggplot(healthdata, aes(x = BirthYear_c, y = AnnualWeeksWorked_c, color = ActiveCredentialOtherState)) +
+  geom_point() +
+  xlab(&quot;Centered Birth Year&quot;) +
+  ylab(&quot;Centered Annual Weeks Worked&quot;) + 
+  labs(color = &quot;Active Credential in Other State&quot;) +
+  theme(legend.position = c(0.25, 0.9)) +
+  guides(color = guide_legend(reverse = TRUE))</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-13-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>The histogram of the residuals is not normal, this violations the normality of residuals assumption.</p>
+<pre class="r"><code>resids &lt;- lm(AnnualWeeksWorked_c ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)$residuals
+ggplot() +
+  geom_histogram(aes(resids), bins = 25)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-14-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>The residuals are not evenly spaced among this graph, therefore, the equal variance of residuals assumption is also violated.</p>
+<pre class="r"><code>fitted &lt;- lm(AnnualWeeksWorked_c ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)$fitted.values
+ggplot()+
+  geom_point(aes(fitted, resids)) +
+  geom_hline(yintercept = 0, color = &quot;#3262AB&quot;)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-15-1.png" width="768" style="display: block; margin: auto;" />
+Because the heteroskedastic assumption is violated, robust standard errors were computed.</p>
+<pre class="r"><code>library(sandwich)
+library(lmtest)
+coeftest(fit, vcov=vcovHC(fit))</code></pre>
+<pre><code>##
+## t test of coefficients:
+##
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 0.3083482 0.0806422 3.8237 0.0001317 ***
+## ActiveCredentialOtherStateTRUE -0.9912362 0.1561208
+-6.3492 2.185e-10 ***
+## BirthYear_c -0.1158285 0.0067332 -17.2026 &lt; 2.2e-16 ***
+## ActiveCredentialOtherStateTRUE:BirthYear_c 0.0561174
+0.0131253 4.2755 1.911e-05 ***
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<p>Even with robust standard errors, all coeficients were significant. The standards errors increases slightly, causing the p-value to increase slightly. All p-values were still highly significant.</p>
+<p>The R squared values were then computed to determine to proportion of variation in the response variable explained by the overall model.</p>
+<pre class="r"><code>summary(fit)$r.squared*100</code></pre>
+<pre><code>## [1] 0.7785414</code></pre>
+<pre class="r"><code>summary(fit)$adj.r.squared*100</code></pre>
+<pre><code>## [1] 0.7721456</code></pre>
+<p>The R squared value tells us that 0.781% of the variation in annual weeks worked is explained by active credential in another state and birth year.
+The adjusted R squared value tells us that 0.775% of the variation in annual weeks worked is explained by active credential in another state and birth year.</p>
+</div>
+<div id="section-2" class="section level2">
+<h2><strong>4.</strong></h2>
+<p>The same regression model was rerun, and bootstrapped standard errors were computed via resampling residuals.</p>
+<pre class="r"><code>set.seed(1234)
+fit &lt;- lm(AnnualWeeksWorked_c ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)
+  resids&lt;-fit$residuals
+  fitted&lt;-fit$fitted.values
+  resid_resamp&lt;-replicate(5000,{
+    new_resids&lt;-sample(resids,replace=TRUE) 
+    healthdata$new_y&lt;-fitted+new_resids 
+    fit &lt;- lm(new_y ~ ActiveCredentialOtherState + BirthYear_c + ActiveCredentialOtherState*BirthYear_c, data= healthdata)
+    coef(fit)
+})
+resid_resamp%&gt;%t%&gt;%as.data.frame%&gt;%summarize_all(sd)</code></pre>
+<pre><code>## (Intercept) ActiveCredentialOtherStateTRUE BirthYear_c
+ActiveCredentialOtherStateTRUE:BirthYear_c
+## 1 0.08167245 0.1537738 0.006670112 0.0127952</code></pre>
+<p>The bootstrapped standard errors were then compared to the original and robust SEs. The robust SEs were the largest. The bootstrapped SEs were only slightly larger than the original SEs. Because both the robust and bootstrapped SEs were larger than the original SEs, this would cause the p-value to increase. All p-values would still be significant.</p>
+<pre class="r"><code>#Original
+summary(fit)$coefficients[, 2] %&gt;% as.data.frame()</code></pre>
+<pre><code>##                                                      .
+## (Intercept)                                0.082360245
+## ActiveCredentialOtherStateTRUE             0.152257539
+## BirthYear_c                                0.006679466
+## ActiveCredentialOtherStateTRUE:BirthYear_c 0.012650973</code></pre>
+<pre class="r"><code>#Robust
+coeftest(fit, vcov=vcovHC(fit))</code></pre>
+<pre><code>##
+## t test of coefficients:
+##
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 0.3083482 0.0806422 3.8237 0.0001317 ***
+## ActiveCredentialOtherStateTRUE -0.9912362 0.1561208
+-6.3492 2.185e-10 ***
+## BirthYear_c -0.1158285 0.0067332 -17.2026 &lt; 2.2e-16 ***
+## ActiveCredentialOtherStateTRUE:BirthYear_c 0.0561174
+0.0131253 4.2755 1.911e-05 ***
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<pre class="r"><code>#Boostrapped
+resid_resamp%&gt;%t%&gt;% as.data.frame %&gt;% summarize_all(sd) </code></pre>
+<pre><code>## (Intercept) ActiveCredentialOtherStateTRUE BirthYear_c
+ActiveCredentialOtherStateTRUE:BirthYear_c
+## 1 0.08167245 0.1537738 0.006670112 0.0127952</code></pre>
+<pre class="r"><code>#Comparison
+variable &lt;- c(&quot;Intercept&quot;, &quot;ActiveCredentialOtherStateTRUE&quot;, &quot;BirthYear_c&quot;, &quot;ActiveCredentialOtherStateTRUE:BirthYear_c&quot;)
+original &lt;- c(0.082529768,  0.152538086, 0.006691583,   0.012669272) %&gt;% round(4)
+robust &lt;- c(0.0807958, 0.1564437, 0.0067394, 0.0131415) %&gt;% round(4)
+bootstrapped &lt;- c(0.08111371, 0.1530644, 0.006713142, 0.01281828) %&gt;% round(4)
+compare &lt;- cbind(variable, original, robust, bootstrapped) %&gt;% as.data.frame
+compare</code></pre>
+<pre><code>## variable original robust bootstrapped
+## 1 Intercept 0.0825 0.0808 0.0811
+## 2 ActiveCredentialOtherStateTRUE 0.1525 0.1564 0.1531
+## 3 BirthYear_c 0.0067 0.0067 0.0067
+## 4 ActiveCredentialOtherStateTRUE:BirthYear_c 0.0127
+0.0131 0.0128</code></pre>
+</div>
+<div id="section-3" class="section level2">
+<h2><strong>5.</strong></h2>
+<p>To determine if workstatus could be predicted by birth year or number of years practicing in Washington, a logistic regression was completed.</p>
+<pre class="r"><code>fit1&lt;-glm(WorkStatus~BirthYear_c + NumberYearsPrimaryPracticeLocation_c,data=healthdata,family=binomial)
+coeftest(fit1)</code></pre>
+<pre><code>##
+## z test of coefficients:
+##
+## Estimate Std. Error z value Pr(&gt;|z|)
+## (Intercept) 6.6663607 0.1312178 50.8038 &lt;2e-16 ***
+## BirthYear_c -0.0026317 0.0119364 -0.2205 0.8255
+## NumberYearsPrimaryPracticeLocation_c 0.0222942 0.0263009
+0.8477 0.3966
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<pre class="r"><code>exp(coef(fit1))</code></pre>
+<pre><code>## (Intercept) BirthYear_c
+## 785.5316060 0.9973718
+## NumberYearsPrimaryPracticeLocation_c
+## 1.0225446</code></pre>
+<p>The odds of working for a person with average birthyear and an average number of years at the primary practice location is 782.257.</p>
+<p>Controlling for the number of years at their primary practice location, for every one year increase in birth year, the odds of currently working increase by a factor of 0.997 (non-significant)</p>
+<p>Controlling for birth year, for every one year increase in the number of years practicing at their primary practice location increases the odds of currently working by a factor of 1.022 (non-significant).</p>
+<p>A confusion matrix was then completed. This model predicted all people to be currently working.</p>
+<pre class="r"><code>probs&lt;-predict(fit1,type=&quot;response&quot;)
+table(predict=as.numeric(probs&gt;.5),truth=healthdata$WorkStatus)%&gt;%addmargins</code></pre>
+<pre><code>##        truth
+## predict FALSE  TRUE   Sum
+##     1      60 46485 46545
+##     Sum    60 46485 46545</code></pre>
+<p>From the class diag function, the accuracy was 0.9987057, the sensitivity was 1, the specificity was 0, and the precision was 0.9987057. The model correctly predicted all people who were currently working leading to a sensitivity of 1. The specificity was 0 because it incorrectly identified all non-workers as workers. Because the vast majority of the sample were workers, the accuracy and precision of the model was very high.</p>
+<pre class="r"><code>class_diag&lt;-function(probs,truth){
+  
+  if(is.numeric(truth)==FALSE &amp; is.logical(truth)==FALSE) truth&lt;-as.numeric(truth)-1
+  
+  tab&lt;-table(factor(probs&gt;.5,levels=c(&quot;FALSE&quot;,&quot;TRUE&quot;)),truth)
+  prediction&lt;-ifelse(probs&gt;.5,1,0)
+  acc=mean(truth==prediction)
+  sens=mean(prediction[truth==1]==1)
+  spec=mean(prediction[truth==0]==0)
+  ppv=mean(truth[prediction==1]==1)
+  
+  #CALCULATE EXACT AUC
+  ord&lt;-order(probs, decreasing=TRUE)
+  probs &lt;- probs[ord]; truth &lt;- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup&lt;-c(probs[-1]&gt;=probs[-length(probs)], FALSE)
+  TPR&lt;-c(0,TPR[!dup],1); FPR&lt;-c(0,FPR[!dup],1)
+  
+  n &lt;- length(TPR)
+  auc&lt;- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+
+  data.frame(acc,sens,spec,ppv,auc)
+}
+
+class_diag(probs, healthdata$WorkStatus)</code></pre>
+<pre><code>##         acc sens spec       ppv       auc
+## 1 0.9987109    1    0 0.9987109 0.5647338</code></pre>
+<p>The log-odd density was then plotted against the binary outcome variable.</p>
+<pre class="r"><code>healthdata$logit &lt;- predict(fit1, type = &quot;link&quot;)
+healthdata %&gt;% ggplot()+
+  geom_density(aes(logit, color = WorkStatus, fill = WorkStatus), alpha = .4) +
+  theme(legend.position=c(.85,.85))+xlab(&quot;logit (log-odds)&quot;) +
+  xlim(6.2,7.5)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-23-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>To look at how well the model predicted, an ROC curve was plotted and AUC was calculated. The AUC was 0.5644. This is a bad AUC as it is between 0.5 and 0.6.</p>
+<pre class="r"><code>library(plotROC)
+ROCplot &lt;- ggplot(healthdata)+geom_roc(aes(d=WorkStatus,m=probs), n.cuts=0)
+ROCplot</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-24-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>calc_auc(ROCplot)</code></pre>
+<pre><code>##   PANEL group       AUC
+## 1     1    -1 0.5649622</code></pre>
+<p>10-fold cross validation was then completed. Accuraacy, sensitive, specificty, and precision were all the same as the non-cross validated model. The AUC decreased by approximately 0.006.</p>
+<pre class="r"><code>set.seed(1234)
+k=10
+
+data&lt;-healthdata[sample(nrow(healthdata)),] 
+folds&lt;-cut(seq(1:nrow(healthdata)),breaks=k,labels=F)
+
+diags&lt;-NULL
+for(i in 1:k){
+  train&lt;-data[folds!=i,]
+  test&lt;-data[folds==i,]
+  truth&lt;-test$WorkStatus
+  fit1&lt;-glm(WorkStatus~BirthYear_c + NumberYearsPrimaryPracticeLocation_c,data=healthdata,family=binomial)
+  probs&lt;-predict(fit1,newdata = test,type=&quot;response&quot;)
+  diags&lt;-rbind(diags,class_diag(probs,truth))
+}
+  
+summarize_all(diags,mean)</code></pre>
+<pre><code>##         acc sens spec       ppv       auc
+## 1 0.9987109    1    0 0.9987109 0.5826626</code></pre>
+</div>
+<div id="section-4" class="section level2">
+<h2><strong>6.</strong></h2>
+<p>A LASSO regression was then completed with all variables to see if any were significant predictors of Workstatus. Only Annual Weeks Worked was a significant predictor of Work Status, all other variables were dropped.</p>
+<pre class="r"><code>library(glmnet)
+glimpse(healthdata)</code></pre>
+<pre><code>## Observations: 46,545
+## Variables: 13
+## $ ActiveCredentialOtherState &lt;lgl&gt; TRUE, TRUE, FALSE,
+FALSE, TRUE, FALSE, FALSE, FALSE,…
+## $ AnnualWeeksWorked &lt;dbl&gt; 50, 45, 51, 50, 48, 49, 52,
+43, 52, 50, 0, 48, 32, 5…
+## $ BirthYear &lt;dbl&gt; 1962, 1958, 1984, 1987, 1982, 1976,
+1974, 1974, 1988…
+## $ CommunicateOtherLanguage &lt;lgl&gt; FALSE, FALSE, FALSE,
+FALSE, FALSE, FALSE, FALSE, FAL…
+## $ HighestEducationOnline &lt;lgl&gt; FALSE, FALSE, FALSE,
+FALSE, FALSE, FALSE, FALSE, FAL…
+## $ HighestEducationYear &lt;dbl&gt; 1989, 1995, 2012, 2011,
+2006, 2005, 2001, 1998, 2010…
+## $ NumberYearsPracticeWashington &lt;dbl&gt; 18.0, 1.0, 6.0,
+3.0, 10.0, 10.0, 16.0, 17.0, 2.0, 7.…
+## $ NumberYearsPrimaryPracticeLocation &lt;dbl&gt; 1.0, 1.0,
+3.0, 1.0, 10.0, 10.0, 3.0, 17.0, 2.0, 7.0,…
+## $ WorkStatus &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
+TRUE, TRUE, TRUE…
+## $ AnnualWeeksWorked_c &lt;dbl&gt; 8.19495, 3.19495, 9.19495,
+8.19495, 6.19495, 7.19495…
+## $ BirthYear_c &lt;dbl&gt; -14.8760554, -18.8760554, 7.1239446,
+10.1239446, 5.1…
+## $ NumberYearsPrimaryPracticeLocation_c &lt;dbl&gt; -4.4039803,
+-4.4039803, -2.4039803, -4.4039803, 4.59…
+## $ logit &lt;dbl&gt; 6.607326, 6.617853, 6.594018, 6.541535,
+6.755341, 6.…</code></pre>
+<pre class="r"><code>scaledhealthdata &lt;- healthdata %&gt;% select(!contains(&quot;_&quot;), -logit) %&gt;% mutate_if(is.numeric, scale)
+y &lt;- as.matrix(scaledhealthdata$WorkStatus)
+x &lt;- model.matrix(WorkStatus ~., data = scaledhealthdata)[,-1]
+cv &lt;- cv.glmnet(x, y, family = &quot;binomial&quot;)
+lasso &lt;- glmnet(x, y, family = &quot;binomial&quot;, lambda = cv$lambda.1se)
+coef(lasso)</code></pre>
+<pre><code>## 9 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                                              s0
+## (Intercept)                        6.652540e+00
+## ActiveCredentialOtherStateTRUE     .           
+## AnnualWeeksWorked                  6.737316e-16
+## BirthYear                          .           
+## CommunicateOtherLanguageTRUE       .           
+## HighestEducationOnlineTRUE         .           
+## HighestEducationYear               .           
+## NumberYearsPracticeWashington      .           
+## NumberYearsPrimaryPracticeLocation .</code></pre>
+<p>This model was then cross-validated with K-10 fold CV. Interestingly, the accuracy, sensitive, specificity, and percision were all exactly the same as the previous model. The AUC was considerably higher and now within the good range.</p>
+<pre class="r"><code>set.seed(1234)
+k=10
+data &lt;- scaledhealthdata %&gt;% sample_frac 
+folds &lt;- ntile(1:nrow(data),n=10) 
+diags&lt;-NULL
+for(i in 1:k){
+  train &lt;- data[folds!=i,] 
+  test &lt;- data[folds==i,] 
+  truth &lt;- test$WorkStatus
+  fit2 &lt;- glm(WorkStatus~AnnualWeeksWorked,
+             data=train, family=&quot;binomial&quot;)
+  probs &lt;- predict(fit2, newdata=test, type=&quot;response&quot;)
+  diags&lt;-rbind(diags,class_diag(probs,truth))
+}
+diags%&gt;%summarize_all(mean)</code></pre>
+<pre><code>##         acc sens spec       ppv       auc
+## 1 0.9987109    1    0 0.9987109 0.8280027</code></pre>
+</div>
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
