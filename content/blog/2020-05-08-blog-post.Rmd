@@ -1,0 +1,38 @@
+---
+title: Blog Post
+author: Jacey Pridgen
+date: '2020-05-11'
+slug: blog-post
+categories: []
+tags: []
+description: ''
+---
+## **Reticulate** ![](/blog/2020-05-08-blog-post_files/reticulated_python.png){width=200px height=200px}
+
+Hi y'all!
+This is blog post.
+A post in a blog for SDS348: Computational Biology and Bioinformatics.
+
+Today, we'll be talking about **RETICULATE**
+
+Reticulate is a nifty R package that allows R and Python to *communicate*
+
+### R
+```{R}
+library(reticulate)
+number <- (67+88)*4
+```
+
+### Python
+```{python}
+number = 2*5/14
+print(r.number*number)
+```
+Here, I gave R some arithmatic to complete and saved it as number. I also gave python some arithmatic and saved it. I then asked python to multiply those two numbers together and print the resulting number. 
+
+
+
+
+
+
+

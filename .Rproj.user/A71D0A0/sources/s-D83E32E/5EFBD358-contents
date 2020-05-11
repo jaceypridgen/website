@@ -1,0 +1,22 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Blog Post
+
+Hi y'all!
+This is blog post.
+A post in a blog for SDS348: Computational Biology and Bioinformatics.
+
+Today, we'll be talking about **RETICULATE**
+
+Reticulate is a nifty R package that allows R and Python to *communicate*
+
+```{R}
+library(reticulate)
+2+2
